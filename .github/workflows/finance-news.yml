@@ -1,7 +1,7 @@
 name: Telegram finance news (safe prototype)
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '0,30 * * * *'
   workflow_dispatch:
 permissions:
   contents: write
@@ -19,7 +19,9 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Run tests
         run: python -m unittest discover -s tests -v
-      - name: Check RSS source health\n        run: python check_sources.py\n      - name: Preview headlines
+      - name: Check RSS source health
+        run: python check_sources.py
+      - name: Preview headlines
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
