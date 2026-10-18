@@ -7,6 +7,13 @@ import requests
 import calendar
 
 CANDIDATES = [
+ ('MarketWatch', 'https://feeds.content.dowjones.io/public/rss/mw_topstories'),
+ ('CNBC Finance', 'https://www.cnbc.com/id/10000664/device/rss/rss.html'),
+ ('Yahoo Top', 'https://finance.yahoo.com/rss/topstories'),
+ ('Guardian Business', 'https://www.theguardian.com/business/rss'),
+ ('Franceinfo Economy', 'https://www.francetvinfo.fr/economie.rss'),
+ ('Boursorama Economy', 'https://www.boursorama.com/rss/actualites/economie'),
+ ('BFM Economy', 'https://www.bfmtv.com/rss/economie/'),
  ('Nasdaq', 'https://www.nasdaq.com/feed/rssoutbound?category=Markets'),
  ('Yahoo Finance', 'https://finance.yahoo.com/news/rssindex'),
  ('CNBC markets', 'https://www.cnbc.com/id/100003114/device/rss/rss.html'),
