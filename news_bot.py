@@ -8,7 +8,7 @@ import os
 import re
 from pathlib import Path
 from zoneinfo import ZoneInfo
-from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
+from urllib.parse import urlparse, urljoin, parse_qsl, urlencode, urlunparse
 import feedparser
 import requests
 from editorial import editorial_context
@@ -68,6 +68,22 @@ def article_digest(url):
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
+def resolve_official_link(link, feed_url):
+    """Resolve safe relative paths supplied by an already-approved official RSS."""
+    if not isinstance(link, str) or not link.strip():
+        return ""
+    link = link.strip()
+    parsed = urlparse(link)
+    if parsed.scheme or parsed.netloc:
+        return link if official_url(link, feed_url) else ""
+    if link.startswith("//") or "\\" in link or link.startswith("#") or link.startswith("?"):
+        return ""
+    origin = urlparse(feed_url)
+    root_url = f"https://{origin.hostname}/"
+    candidate = urljoin(root_url, link.lstrip("/"))
+    return candidate if official_url(candidate, feed_url) else ""
+
+
 def select_articles(articles, region, already, kind, now):
     """Avoid stale hourly headlines and prefer relevant, recent announcements."""
     local = now.astimezone(ZoneInfo(MARKETS[region]["zone"]))
@@ -110,7 +126,7 @@ def parse_news(diagnostics=None):
                 if not 0 <= age <= WINDOW_HOURS * 3600:
                     counts["outside_96h"] += 1
                     continue
-                url = entry.get("link", "")
+                url = resolve_official_link(entry.get("link", ""), source["url"])
                 title = re.sub(r"<[^>]*>", "", html.unescape(entry.get("title", ""))).strip()
                 if not official_url(url, source["url"]) or not title:
                     counts["invalid_official_link_or_title"] += 1
