@@ -24,6 +24,20 @@ class PreflightTests(unittest.TestCase):
             self.assertFalse(result["ok"])
             self.assertTrue(any("invalid region" in e for e in result["errors"]))
 
+    def test_invalid_url_and_boolean_weight_are_errors(self):
+        with TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            (base / "config").mkdir()
+            (base / ".github/workflows").mkdir(parents=True)
+            (base / "config/sources.json").write_text(
+                '[{"name":"Broken","url":42,"regions":["RO"],"weight":true}]')
+            (base / ".github/workflows/finance-news.yml").write_text(
+                "DRY_RUN: 'true'\\npermissions:\\n  contents: read\\n")
+            result = inspect(base)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any("RSS URL" in e for e in result["errors"]))
+            self.assertTrue(any("weight" in e for e in result["errors"]))
+
     def test_fails_if_workflow_enables_live_delivery(self):
         with TemporaryDirectory() as tmp:
             base = Path(tmp)
