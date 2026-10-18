@@ -5,16 +5,16 @@
 ## 运行方式
 
 - `finance-news.yml`：抓取、测试和预览，始终 `DRY_RUN=true`、只读权限、无 Telegram 密钥。
-- `finance-news-live.yml`：独立发送入口。手动运行需填写 `SEND_NEWS`；定时运行需仓库变量 `NEWS_LIVE_ENABLED=true`，默认不开启。只允许 main 分支。
-- 当地 07:30–07:59 晨报，08 点起每小时前 20 分钟筛选快报；正式入口在 UTC :10/:40 唤醒。周一晨报回看 72 小时，其他晨报 18 小时，快报 6 小时。GitHub 调度可能延迟，不保证准点送达。
+- `finance-news-live.yml`：正式发送入口，按原配置 UTC 整点、半点定时运行，无额外启用变量。只允许 main 分支；也可手动运行。
+- 当地 07:30–07:59 晨报，08 点起每小时前 20 分钟筛选快报；正式入口在 UTC :00/:30 唤醒。周一晨报回看 72 小时，其他晨报 18 小时，快报 6 小时。GitHub 调度可能延迟，不保证准点送达。
 - 无合格新闻不发送。法国与罗马尼亚独立选稿、去重，同一新闻可以分别向两国发布。
 
 ## 首次启用
 
 1. 在仓库 Secrets 配置 `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID`，不要在聊天或代码中粘贴。
 2. 手动运行现有 `Telegram one-time connectivity test`，填写 `SEND_ONE_TEST`，核对目标群收到测试消息。
-3. 在新闻时段手动运行 `Telegram finance news (opt-in delivery)`，填写 `SEND_NEWS`，核对分国消息及 `state/live_ledger.json` 的回执。无新新闻或不在时段不会强行发送。
-4. 验收后设置仓库变量 `NEWS_LIVE_ENABLED=true` 开启定时发送；置为 `false` 暂停。正在运行的任务需另行取消。
+3. 在新闻时段手动运行 `Telegram finance news (scheduled delivery)`，核对分国消息及 `state/live_ledger.json` 的回执。无新新闻或不在时段不会强行发送。
+4. 定时发送随工作流生效；如需暂停，在 GitHub Actions 中禁用该发送工作流，正在运行的任务需另行取消。
 
 正式工作流使用内置 `github.token` 写账本，无需长期 GitHub PAT。若分支保护禁止 Actions 更新账本，程序会在发送前停止，需调整账本存储方案。
 

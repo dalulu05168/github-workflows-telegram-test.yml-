@@ -1,13 +1,8 @@
-name: Telegram finance news (opt-in delivery)
+name: Telegram finance news (scheduled delivery)
 on:
   schedule:
-    - cron: '10,40 * * * *'
+    - cron: '0,30 * * * *'
   workflow_dispatch:
-    inputs:
-      confirmation:
-        description: 'Type SEND_NEWS to send eligible news in the current local delivery window'
-        required: true
-        type: string
 permissions:
   contents: read
 concurrency:
@@ -15,10 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deliver:
-    if: >-
-      github.ref == 'refs/heads/main' &&
-      ((github.event_name == 'schedule' && vars.NEWS_LIVE_ENABLED == 'true') ||
-       (github.event_name == 'workflow_dispatch' && inputs.confirmation == 'SEND_NEWS'))
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

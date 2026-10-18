@@ -78,12 +78,13 @@ class TakeoverTests(unittest.TestCase):
                 self.assertEqual(due_slot(local)[0], "morning")
                 self.assertEqual(due_slot(local.replace(hour=8, minute=10))[0], "hourly")
 
-    def test_live_workflow_is_opt_in_and_preview_stays_read_only(self):
+    def test_live_workflow_preserves_original_schedule_and_preview_stays_read_only(self):
         base = Path(__file__).resolve().parents[1]
         live = (base / ".github/workflows/finance-news-live.yml").read_text()
         preview = (base / ".github/workflows/finance-news.yml").read_text()
-        self.assertIn("vars.NEWS_LIVE_ENABLED == 'true'", live)
-        self.assertIn("inputs.confirmation == 'SEND_NEWS'", live)
+        self.assertIn("cron: '0,30 * * * *'", live)
+        self.assertNotIn("NEWS_LIVE_ENABLED", live)
+        self.assertNotIn("confirmation", live)
         self.assertIn("github.ref == 'refs/heads/main'", live)
         self.assertIn("persist-credentials: false", live)
         self.assertIn("python live_runner.py", live)
