@@ -25,6 +25,14 @@ class DeliverySafetyTests(unittest.TestCase):
                 self.assertTrue(news_bot.telegram_send("x" * 4100))
                 self.assertEqual(post.call_count, 2)
 
+    def test_prefers_complete_news_boundary(self):
+        first = "开头" + "A" * 2300
+        second = "\\n\\n🔵 🇫🇷 法国｜财经资讯快报" + "B" * 2300
+        chunks = split_telegram_message(first + second)
+        self.assertEqual(len(chunks), 2)
+        self.assertEqual(chunks[0], first)
+        self.assertEqual(chunks[1], second)
+
     def test_split_preserves_full_text(self):
         original = "A" * 3999 + "\\n" + "B" * 100
         chunks = split_telegram_message(original)
