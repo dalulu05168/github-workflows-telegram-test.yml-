@@ -41,3 +41,10 @@ DRY_RUN=true PREVIEW_ALL=true python news_bot.py
 ```
 
 所有命令均可在 GitHub Actions 日志中单独查看。注意：命令被写入文档**不代表它们已经成功执行**。
+
+## 2026-10-18 新增诊断与周一晨报逻辑
+
+- 依据 GitHub Actions 用户提供的真实日志，2026-10-18 周日 RO、FR 最近 6h/18h 均无可选新闻；BVB RSS 可抓取 14 条、最近一条约 38.9h，BLS 原链接返回 404。
+- 解析层保留最近 96h 的候选；**只有当地周一晨报**才允许回看最近 72h，普通晨报仍为 18h，每小时快报仍为 6h。旧文章仍受已发送 ID 去重限制（跨运行持久化仍未实现）。
+- `Report country news coverage` 新增 `feed_diagnostics`：各来源抓取条数、接收条数、无日期、超过 96h、官方链接/标题不合格、请求错误。需要下一次 Actions 日志确认这些计数及新逻辑是否通过。
+- **本轮 GitHub 提交成功，但最新 Actions 运行尚未验证**；本地无法安装 feedparser，不能声称全套测试已通过。
