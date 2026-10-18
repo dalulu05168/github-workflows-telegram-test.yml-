@@ -23,6 +23,7 @@ def report(articles, now, diagnostics=None):
     for region, market in MARKETS.items():
         local = now.astimezone(ZoneInfo(market["zone"]))
         candidates = [a for a in articles if region in a["regions"]]
+        morning_hours = 72 if local.weekday() == 0 else 18
         hourly = select_articles(articles, region, set(), "hourly", now)
         morning = select_articles(articles, region, set(), "morning", now)
         output["regions"][region] = {
