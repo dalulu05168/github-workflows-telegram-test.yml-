@@ -9,6 +9,9 @@ class FeedHealthTests(unittest.TestCase):
         response.raise_for_status.return_value=None
         result=check_source({"name":"Example","url":"https://example.org/rss"},fetch=lambda *a,**k:response)
         self.assertTrue(result["ok"])
+        self.assertIn("newest_utc", result)
+        self.assertIn("newest_age_hours", result)
+        self.assertFalse(result["fresh_within_72h"])
     def test_invalid_feed(self):
         response=Mock()
         response.content=b'not an rss document'
