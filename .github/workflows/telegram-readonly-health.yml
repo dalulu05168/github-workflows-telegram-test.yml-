@@ -1,0 +1,26 @@
+name: Telegram read-only connection check
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - name: Verify bot identity and target permissions, never send messages
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python telegram_health.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: telegram-readonly-health-${{ github.run_id }}
+          path: reports/telegram-health.json
+          if-no-files-found: warn
