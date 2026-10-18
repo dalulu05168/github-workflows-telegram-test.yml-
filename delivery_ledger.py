@@ -92,6 +92,14 @@ class GitHubLedger:
             except (IndexError, ValueError):
                 raise LedgerConflict("Malformed ledger slot identifier")
             if date < cutoff:
+                record = self.slots[key]
+                # An ambiguous Telegram result must never be silently forgotten.
+                # Otherwise a later run could reuse the same article after pruning.
+                if not isinstance(record, dict) or not isinstance(record.get("parts"), list):
+                    raise LedgerConflict("Malformed ledger record; cannot safely prune")
+                if any(not isinstance(part, dict) or part.get("status") != "sent"
+                       for part in record["parts"]):
+                    continue
                 del self.slots[key]
 
     def claimed_articles(self, region):
@@ -151,12 +159,17 @@ class GitHubLedger:
 
 def send_telegram_part(token, chat_id, message, transport=requests):
     """Return a verified Telegram message_id; missing/ambiguous receipts fail closed."""
-    response = transport.post(
-        f"https://api.telegram.org/bot{token}/sendMessage",
-        json={"chat_id": chat_id, "text": message, "disable_web_page_preview": True},
-        timeout=25)
-    response.raise_for_status()
-    payload = response.json()
+    try:
+        response = transport.post(
+            f"https://api.telegram.org/bot{token}/sendMessage",
+            json={"chat_id": chat_id, "text": message, "disable_web_page_preview": True},
+            timeout=25)
+        response.raise_for_status()
+        payload = response.json()
+    except (requests.RequestException, ValueError) as exc:
+        # requests includes the bot token in URL-bearing exception messages.
+        # Suppress exception chaining so logs never print that secret.
+        raise DeliveryUncertain("Telegram send failed or timed out; delivery must be reconciled") from None
     result = payload.get("result") or {}
     identifier = result.get("message_id")
     if payload.get("ok") is not True or type(identifier) is not int or identifier < 1:
