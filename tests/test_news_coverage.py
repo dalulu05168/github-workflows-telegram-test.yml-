@@ -16,6 +16,14 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual(audit["RO"]["configured_local_sources"],["BNR"])
         self.assertFalse(audit["RO"]["local_coverage_verified"])
 
+    def test_feed_rejection_reasons_in_report(self):
+        now=dt.datetime(2026,10,18,12,tzinfo=dt.timezone.utc)
+        diagnostics=[{"source":"BVB","entries":14,"accepted":0,
+                      "outside_96h":14,"missing_date":0,
+                      "invalid_official_link_or_title":0,"error":None}]
+        result=report([],now,diagnostics)
+        self.assertEqual(result["feed_diagnostics"][0]["outside_96h"],14)
+
     def test_empty_sources_are_reported(self):
         now=dt.datetime(2026,10,18,12,tzinfo=dt.timezone.utc)
         result=report([],now)
