@@ -6,7 +6,7 @@ def market_notices(now_utc, region):
     for event in indicative_session_windows(now_utc):
         if event["region"] not in (region, "US"):
             continue
-        phase = "常规开盘前约25分钟" if event["phase"] == "pre_open" else "常规开盘后约25分钟"
+        phase = "常规开盘前30分钟内" if event["phase"] == "pre_open" else "常规开盘后30分钟内"
         notices.append(
             f"📊 {event['market']}｜{phase}\n"
             "⚠️ 仅根据当地常规开盘时间生成提示；尚未核实今日交易日、临时休市或实时行情。\n"
