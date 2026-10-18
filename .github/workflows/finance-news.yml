@@ -32,3 +32,15 @@ jobs:
         run: python news_bot.py
       - name: Preview indicative market sessions (no delivery)
         run: python preview_market_notices.py
+      - name: Persist delivered article IDs (live mode only)
+        if: ${{ env.DRY_RUN == 'false' }}
+        run: |
+          if git diff --quiet -- state/sent.json; then
+            echo "No delivered IDs to persist."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/sent.json
+          git commit -m "Persist delivered finance news IDs [skip ci]"
+          git push origin HEAD:main
