@@ -12,11 +12,11 @@ def relevant(article):
         return True
     title=plain(article.get('title',''))
     if any(re.search(r'(?<!\w)'+word+r'(?!\w)',title) for word in (
-        'alegeri','parlament','partid','protest','trump','putin','election','political','politics')):
+        'alegeri','parlament','partid','protest','trump','putin','election','political','politics','macron','violences','violente','protestele','elysee','parti')):
         return False
     text=title+' '+plain(article.get('summary',''))
     terms=('bvb','bet','bursa','capitalizare','capitalizarea','actiuni','actiunilor','dobanda','dobanzi','inflatie','inflatia','banca','banci','bancar',
            'dividend','dividende','profit','profitul','venituri','financiar','financiare','economia','pib','investitii','investitiile',
-           'stock','shares','earnings','revenue','inflation','interest rate','treasury',
-           'semiconductor','oil','gas','energy','bank','cfo','financial','gdp')
+           'stock','stocks','shares','earnings','revenue','inflation','interest rate','treasury',
+           'semiconductor','semiconductors','chips','oil','gas','energy','bank','cfo','financial','gdp','lvmh','hermes','kering','airbus','luxe','dette','budget','bourse','epargne','banque','banques','inflation','croissance','obligations','taux','benefices','investissement','entreprise')
     return any(re.search(r'(?<!\w)'+re.escape(word)+r'(?!\w)',text) for word in terms)

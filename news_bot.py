@@ -13,9 +13,10 @@ import feedparser
 import requests
 from rss_cache import load_feed
 from publisher_filter import relevant
+from market_routing import route
 from editorial import editorial_context
 from free_translation import FreeTranslator, TranslationUnavailable
-from us_events import us_event_context, is_us_equity_event
+from us_events import us_event_context, is_us_equity_event, is_us_market_commentary
 from state_store import prune_sent_state, write_state_atomic
 
 BASE = Path(__file__).resolve().parent
@@ -41,12 +42,13 @@ def official_url(article_url, feed_url):
     # Fixed publisher-owned feed mapping; never accept arbitrary cross-domain links.
     publishers = {
         "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain": "wsj.com",
+        "https://feeds.content.dowjones.io/public/rss/mw_topstories": "marketwatch.com",
     }
     if feed_url in publishers:
         root = publishers[feed_url]
         return host == root or host.endswith("." + root)
     # Hostnames may differ within the same official organization.
-    roots = ("federalreserve.gov", "ecb.europa.eu", "bls.gov", "insee.fr", "bvb.ro", "bnr.ro", "nasdaq.com", "sec.gov", "economica.net", "romania-insider.com", "cnbc.com")
+    roots = ("federalreserve.gov", "ecb.europa.eu", "bls.gov", "insee.fr", "bvb.ro", "bnr.ro", "nasdaq.com", "sec.gov", "economica.net", "romania-insider.com", "cnbc.com", "bfmtv.com")
     # INSEE statistics RSS is served on bdm.insee.fr; article links may be on insee.fr.
     for root in roots:
         if (feed_host == root or feed_host.endswith("." + root)):
@@ -56,12 +58,14 @@ def official_url(article_url, feed_url):
 
 LOCAL_DOMAINS = {
     "RO": ("bvb.ro", "bnr.ro", "insse.ro", "economica.net", "romania-insider.com"),
-    "FR": ("insee.fr", "euronext.com", "tresor.economie.gouv.fr"),
+    "FR": ("insee.fr", "euronext.com", "tresor.economie.gouv.fr", "bfmtv.com"),
 }
 
 
 def local_source(article, region):
     """Identify local institutional reporting by its official link hostname."""
+    if article.get("issuer_market") == region:
+        return True
     host = (urlparse(article.get("source_url") or article.get("url", "")).hostname or "").lower()
     return any(host == domain or host.endswith("." + domain)
                for domain in LOCAL_DOMAINS[region])
@@ -102,7 +106,7 @@ def select_articles(articles, region, already, kind, now):
     candidates = sorted(
         (item for item in articles if relevant(item) and region in item["regions"]
          and 0 <= (now - item["published"]).total_seconds() <= max_hours * 3600
-         and (item.get("coverage") != "us_market" or us_event_context(item, region))),
+         and (item.get("coverage") != "us_market" or us_event_context(item, region) or is_us_market_commentary(item))),
         key=lambda item: rank(item, region), reverse=True,
     )
     eligible = []
@@ -116,6 +120,8 @@ def select_articles(articles, region, already, kind, now):
     us = next((entry for entry in eligible if is_us_equity_event(entry[0])), None)
     if us is None:
         us = next((entry for entry in eligible if us_event_context(entry[0], region)), None)
+    if us is None:
+        us = next((entry for entry in eligible if is_us_market_commentary(entry[0])), None)
     selected = []
     for entry in [local, us] + eligible:
         if entry and all(entry[1] != other[1] for other in selected):
@@ -159,7 +165,7 @@ def parse_news(diagnostics=None):
                 summary = re.sub(r"<[^>]*>", " ", html.unescape(entry.get("summary", "")))
                 summary = " ".join(summary.split())[:450]
                 counts["accepted"] += 1
-                results.append({
+                results.append(route({
                     "title": title, "url": url, "summary": summary,
                     "published": published_at, "source": source["name"],
                     "time_label": "发布时间" if entry.get("published_parsed") else "源更新时间",
@@ -170,7 +176,7 @@ def parse_news(diagnostics=None):
                     "source_kind": source.get("source_kind", "institutional"),
                     "financial_news_only": source.get("financial_news_only", False),
                     "author": re.sub(r"<[^>]*>", "", html.unescape(entry.get("author", "")))[:120],
-                })
+                }))
         except (requests.RequestException, ValueError) as exc:
             counts["error"] = type(exc).__name__ + ": " + str(exc)[:130]
             print(f"Unavailable feed {source['name']}: {exc}")
@@ -181,7 +187,7 @@ def rank(article, region):
     text = (article["title"] + " " + article["summary"]).lower()
     words = {
         "RO": ("romania", "romanian", "bucharest", "bvb", "bnr", "ron", "bet index"),
-        "FR": ("france", "french", "paris", "cac 40", "insee", "euronext"),
+        "FR": ("france", "french", "paris", "cac 40", "insee", "euronext", "lvmh", "hermes", "hermès"),
     }
     important = ("interest rate", "inflation", "gdp", "employment", "federal reserve",
                  "monetary policy", "financial stability", "tariff", "energy", "bank")
@@ -278,6 +284,12 @@ def format_digest(region, kind, chosen, local, translator=None):
     country_time = market["name"] + "时间"
     lines = ["===== 资讯助理 =====", f"{market['flag']} {market['name']}｜{period}",
              f"{country_time} {local:%m月%d日 %H:%M}"]
+    if any(us_event_context(item,region) for item in chosen):
+        lines.append("美股相关消息：本期包含已识别的公司或市场事件，发布时间见各条来源。")
+    elif any(is_us_market_commentary(item) for item in chosen):
+        lines.append("美股相关消息：本期包含媒体市场观察，非实时行情或已证实的走势预测。")
+    else:
+        lines.append("美股相关消息：本期暂无符合时效与去重要求的新事件。")
     for number,item in enumerate(chosen,1):
         published = item["published"].astimezone(ZoneInfo(market["zone"]))
         title, summary = item["title"], item.get("summary", "").strip()
@@ -291,6 +303,8 @@ def format_digest(region, kind, chosen, local, translator=None):
                 title,summary = item["title"],item.get("summary","").strip()
                 translation_note = "；中文翻译暂不可用，以下保留来源原文"
         context = editorial_context(item, region)
+        if context.get("us_event") or context.get("us_commentary"):
+            title = "🇺🇸 " + title
         attribution = ("｜作者/供稿：" + item["author"]) if item.get("author") else ""
         lines += ["", f"{number}. {context.get('headline', title)}", "",
                   summary or "来源目前只提供标题，详细内容仍需查阅原文。",

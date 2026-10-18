@@ -7,6 +7,7 @@ Review/approval and a protected scheduled workflow are required before use.
 import os
 from zoneinfo import ZoneInfo
 from free_translation import FreeTranslator
+from us_events import is_us_equity_event, us_event_context, is_us_market_commentary
 
 from delivery_ledger import (
     DeliveryUncertain, GitHubLedger, LedgerConflict, send_telegram_part,
@@ -111,6 +112,12 @@ def run_live(environment=None, now=None, articles=None,
             market_report["failed_sources"] = failed_sources
             print(f"{region} {suffix}: {market_report['status']}; no send.")
             continue
+        market_report["coverage"] = {
+            "us_equity_events": sum(is_us_equity_event(item) for item,_ in selected),
+            "us_events": sum(bool(us_event_context(item,region)) for item,_ in selected),
+            "us_market_commentary": sum(is_us_market_commentary(item) for item,_ in selected),
+            "local_market_items": sum(item.get("issuer_market")==region or region in item.get("regions",[]) and item.get("coverage")!="us_market" for item,_ in selected),
+        }
         message = format_digest(region, kind, [item for item, _ in selected], local, translator=translator)
         chunks = split_telegram_message(message)
         article_ids = [digest for _, digest in selected]

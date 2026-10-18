@@ -84,7 +84,7 @@ def matches(text, terms):
 def us_event_context(article, region):
     title = article.get("title", "")
     text = title + " " + article.get("summary", "")
-    if "?" in title or any(term in title.casefold() for term in OPINION):
+    if is_market_analysis_title(title) or "?" in title or any(term in title.casefold() for term in OPINION):
         return None
     host = (urlparse(article.get("source_url") or article.get("url", "")).hostname or "").lower()
     institutional_us = any(host == root or host.endswith("." + root)
@@ -107,3 +107,21 @@ def us_event_context(article, region):
 
 def is_us_equity_event(article):
     return article.get("asset_class") == "equities" and us_event_context(article, "RO") is not None
+
+
+def is_market_analysis_title(title):
+    return any(term in title.casefold() for term in ('market rotation', 'warning of', 'weakness ahead', 'is a reminder', 'market outlook'))
+
+
+def is_us_market_commentary(article):
+    """Fresh publisher analysis is separate from observed equity events."""
+    feed=article.get('source_url','')
+    if feed not in ('https://feeds.content.dowjones.io/public/rss/mw_topstories', 'https://feeds.content.dowjones.io/public/rss/RSSMarketsMain'):
+        return False
+    title=article.get('title','')
+    text=title+' '+article.get('summary','')
+    if not is_market_analysis_title(title):
+        return False
+    if '?' in title or any(term in title.casefold() for term in ('stocks to buy','should you','millionaire','could double','price target','prediction:')):
+        return False
+    return bool(matches(text, ('s&p 500','s&p500','nasdaq','wall street','dow jones','u.s. stocks')))

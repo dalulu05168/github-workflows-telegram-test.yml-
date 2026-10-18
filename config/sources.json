@@ -140,5 +140,43 @@
     "coverage": "us_market",
     "source_kind": "publisher",
     "financial_news_only": true
+  },
+  {
+    "name": "MarketWatch 市场报道与分析",
+    "url": "https://feeds.content.dowjones.io/public/rss/mw_topstories",
+    "regions": [
+      "RO",
+      "FR"
+    ],
+    "weight": 4,
+    "market": "GLOBAL",
+    "asset_class": "equities",
+    "coverage": "us_market",
+    "source_kind": "publisher",
+    "financial_news_only": true
+  },
+  {
+    "name": "CNBC Finance 财经报道",
+    "url": "https://www.cnbc.com/id/10000664/device/rss/rss.html",
+    "regions": [
+      "RO",
+      "FR"
+    ],
+    "weight": 4,
+    "market": "GLOBAL",
+    "asset_class": "equities",
+    "coverage": "us_market",
+    "source_kind": "publisher",
+    "financial_news_only": true
+  },
+  {
+    "name": "BFM 法国经济报道",
+    "url": "https://www.bfmtv.com/rss/economie/",
+    "regions": [
+      "FR"
+    ],
+    "weight": 4,
+    "source_kind": "publisher",
+    "financial_news_only": true
   }
 ]
