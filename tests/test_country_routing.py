@@ -43,7 +43,7 @@ class CountryRoutingTests(unittest.TestCase):
    self.assertIn('🇺🇸',text)
 
  def test_weekend_market_analysis_is_not_counted_as_an_observed_event(self):
-  a={'title':'There is a silent market rotation inside the S&P 500 warning of more weakness ahead','summary':'Market analysis of Wall Street sectors.','published':NOW,'source':'MarketWatch','source_url':'https://feeds.content.dowjones.io/public/rss/mw_topstories','url':'https://www.marketwatch.com/story/test','regions':['RO','FR'],'weight':4,'market':'GLOBAL','coverage':'us_market','asset_class':'equities'}
+  a={'title':'There is a silent market rotation inside the S&P 500 warning of more weakness ahead','summary':'A triple-top reversal pattern points to underperformance for the S&P 500.','published':NOW,'source':'MarketWatch','financial_news_only':True,'source_url':'https://feeds.content.dowjones.io/public/rss/mw_topstories','url':'https://www.marketwatch.com/story/test','regions':['RO','FR'],'weight':4,'market':'GLOBAL','coverage':'us_market','asset_class':'equities'}
   self.assertTrue(is_us_market_commentary(a))
   self.assertIsNone(us_event_context(a,'RO'))
   self.assertFalse(is_us_equity_event(a))

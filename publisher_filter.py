@@ -17,6 +17,6 @@ def relevant(article):
     text=title+' '+plain(article.get('summary',''))
     terms=('bvb','bet','bursa','capitalizare','capitalizarea','actiuni','actiunilor','dobanda','dobanzi','inflatie','inflatia','banca','banci','bancar',
            'dividend','dividende','profit','profitul','venituri','financiar','financiare','economia','pib','investitii','investitiile',
-           'stock','stocks','shares','earnings','revenue','inflation','interest rate','treasury',
+           's&p 500','s&p500','nasdaq','dow jones','wall street','stock','stocks','shares','earnings','revenue','inflation','interest rate','treasury',
            'semiconductor','semiconductors','chips','oil','gas','energy','bank','cfo','financial','gdp','lvmh','hermes','kering','airbus','luxe','dette','budget','bourse','epargne','banque','banques','inflation','croissance','obligations','taux','benefices','investissement','entreprise')
     return any(re.search(r'(?<!\w)'+re.escape(word)+r'(?!\w)',text) for word in terms)
