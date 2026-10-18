@@ -20,6 +20,16 @@ TOPICS = (
      "核对官方 GDP、工业产出和企业业绩数据。"),
 )
 
+MAJOR_TERMS = (
+    "emergency rate cut", "emergency rate hike", "unscheduled rate decision",
+    "bank resolution", "sovereign default", "trading suspended",
+)
+
+def is_major(article):
+    """Only explicit exceptional event language qualifies; not routine releases."""
+    title = article.get("title", "").casefold()
+    return any(term in title for term in MAJOR_TERMS)
+
 def editorial_context(article, region):
     """Only propose conditional watch points when a topic is explicitly identifiable."""
     title = article.get("title", "")
@@ -27,9 +37,9 @@ def editorial_context(article, region):
     content = (title + " " + summary).casefold()
     for topic, keywords, impact, watch in TOPICS:
         if any(re.search(r"(?<!\\w)" + re.escape(word) + r"(?!\\w)", content) for word in keywords):
-            return {"topic": topic, "major": False, "impact": impact[region], "watch": watch}
+            return {"topic": topic, "major": is_major(article), "impact": impact[region], "watch": watch}
     return {
-        "topic": "other", "major": False,
+        "topic": "other", "major": is_major(article),
         "impact": "暂无法从官方摘要确认对本地市场的具体传导渠道，不作方向性判断。",
         "watch": "关注发布机构的完整公告、相关经济指标及交易所正式数据。",
     }
