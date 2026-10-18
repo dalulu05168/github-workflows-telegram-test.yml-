@@ -111,7 +111,7 @@ def split_telegram_message(message, limit=4000):
     if len(message) <= limit:
         return [message]
     # Prefer a new Telegram part at the start of a complete news item.
-    sections = re.split(r"(?=\\n\\n(?:🔵|🔴) [🇷🇴🇫🇷])", message)
+    sections = re.split(r"(?=\n\n(?:🔵|🔴) [🇷🇴🇫🇷])", message)
     chunks = []
     current = ""
     for line in sections if len(sections) > 1 else message.splitlines(keepends=True):
@@ -138,7 +138,7 @@ def telegram_send(message):
     chunks = split_telegram_message(message)
     if os.getenv("DRY_RUN", "true").lower() != "false":
         for i, chunk in enumerate(chunks, 1):
-            print(f"DRY_RUN enabled; preview part {i}/{len(chunks)}:\\n" + chunk)
+            print(f"DRY_RUN enabled; preview part {i}/{len(chunks)}:\n" + chunk)
         return False
     if not token or not chat:
         print("Telegram secrets absent; skipping delivery")
