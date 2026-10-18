@@ -156,6 +156,8 @@ def telegram_send(message):
     if not token or not chat:
         print("Telegram secrets absent; skipping delivery")
         return False
+    if len(chunks) > 1:
+        raise RuntimeError("Multipart live sending requires persistent per-part delivery tracking")
     for chunk in chunks:
         resp = requests.post(
             f"https://api.telegram.org/bot{token}/sendMessage",
