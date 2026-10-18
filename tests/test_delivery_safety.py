@@ -10,6 +10,15 @@ class DeliverySafetyTests(unittest.TestCase):
                 self.assertFalse(news_bot.telegram_send("test preview"))
                 post.assert_not_called()
 
+    def test_live_mode_requires_explicit_approval(self):
+        with patch.dict("os.environ", {
+            "DRY_RUN": "false", "TELEGRAM_BOT_TOKEN": "fake",
+            "TELEGRAM_CHAT_ID": "-1"
+        }, clear=True):
+            with patch("news_bot.requests.post") as post:
+                self.assertFalse(news_bot.telegram_send("test"))
+                post.assert_not_called()
+
     def test_live_mode_requires_secrets(self):
         with patch.dict("os.environ", {"DRY_RUN": "false"}, clear=True):
             with patch("news_bot.requests.post") as post:
@@ -18,7 +27,7 @@ class DeliverySafetyTests(unittest.TestCase):
 
     def test_live_multipart_fails_closed(self):
         with patch.dict("os.environ", {
-            "DRY_RUN": "false", "TELEGRAM_BOT_TOKEN": "fake", "TELEGRAM_CHAT_ID": "-1"
+            "DRY_RUN": "false", "LIVE_APPROVED": "true", "TELEGRAM_BOT_TOKEN": "fake", "TELEGRAM_CHAT_ID": "-1"
         }, clear=True):
             with patch("news_bot.requests.post") as post:
                 with self.assertRaises(RuntimeError):
