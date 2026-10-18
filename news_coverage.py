@@ -1,13 +1,11 @@
 """Report candidate availability and relevance without sending messages."""
 import datetime as dt
 import json
-from news_bot import parse_news, select_articles, MARKETS, NOW, SOURCES
+from news_bot import parse_news, select_articles, MARKETS, NOW, SOURCES, LOCAL_DOMAINS
 from zoneinfo import ZoneInfo
 
 def source_audit(sources):
     """Configured coverage, not evidence that a feed is reachable."""
-    local_hosts = {"RO": ("bnr.ro", "bvb.ro", "insse.ro"),
-                   "FR": ("insee.fr", "euronext.com")}
     from urllib.parse import urlparse
     return {region: {"configured_local_sources": [source["name"] for source in sources
               if region in source["regions"] and any(
@@ -15,7 +13,7 @@ def source_audit(sources):
                   (urlparse(source["url"]).hostname or "").lower().endswith("." + domain)
                   for domain in domains)],
               "local_coverage_verified": False}
-            for region, domains in local_hosts.items()}
+            for region, domains in LOCAL_DOMAINS.items()}
 
 def report(articles, now, diagnostics=None):
     output = {"checked_at_utc": now.isoformat(), "total_articles": len(articles), "regions": {}, "source_audit": source_audit(SOURCES),

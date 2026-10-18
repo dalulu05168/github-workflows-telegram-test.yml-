@@ -3,6 +3,14 @@ import unittest
 from news_coverage import report, source_audit, markdown_summary
 
 class CoverageTests(unittest.TestCase):
+    def test_treasury_is_a_configured_french_source_not_a_verified_coverage_claim(self):
+        sources = [{"name": "Treasury", "url": "https://www.tresor.economie.gouv.fr/Flux/Atom/Articles/Home",
+                    "regions": ["FR"]}]
+        audit = source_audit(sources)
+        self.assertEqual(audit["FR"]["configured_local_sources"], ["Treasury"])
+        self.assertFalse(audit["FR"]["local_coverage_verified"])
+        self.assertEqual(audit["RO"]["configured_local_sources"], [])
+
     def test_missing_local_sources_are_disclosed(self):
         sources=[{"name":"ECB","url":"https://www.ecb.europa.eu/rss/press.html","regions":["RO","FR"]}]
         audit=source_audit(sources)
