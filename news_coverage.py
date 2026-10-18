@@ -17,8 +17,9 @@ def source_audit(sources):
               "local_coverage_verified": False}
             for region, domains in local_hosts.items()}
 
-def report(articles, now):
-    output = {"checked_at_utc": now.isoformat(), "total_articles": len(articles), "regions": {}, "source_audit": source_audit(SOURCES)}
+def report(articles, now, diagnostics=None):
+    output = {"checked_at_utc": now.isoformat(), "total_articles": len(articles), "regions": {}, "source_audit": source_audit(SOURCES),
+              "feed_diagnostics": diagnostics if diagnostics is not None else []}
     for region, market in MARKETS.items():
         local = now.astimezone(ZoneInfo(market["zone"]))
         candidates = [a for a in articles if region in a["regions"]]
@@ -36,4 +37,6 @@ def report(articles, now):
     return output
 
 if __name__ == "__main__":
-    print(json.dumps(report(parse_news(), NOW), ensure_ascii=False, indent=2))
+    diagnostics = []
+    articles = parse_news(diagnostics=diagnostics)
+    print(json.dumps(report(articles, NOW, diagnostics), ensure_ascii=False, indent=2))
