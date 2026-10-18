@@ -8,7 +8,7 @@ import os
 import re
 from pathlib import Path
 from zoneinfo import ZoneInfo
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 import feedparser
 import requests
 from editorial import editorial_context
@@ -43,6 +43,31 @@ def official_url(article_url, feed_url):
     return host == feed_host
 
 
+LOCAL_DOMAINS = {
+    "RO": ("bvb.ro", "bnr.ro", "insse.ro"),
+    "FR": ("insee.fr", "euronext.com"),
+}
+
+
+def local_source(article, region):
+    """Identify local institutional reporting by its official link hostname."""
+    host = (urlparse(article.get("source_url") or article.get("url", "")).hostname or "").lower()
+    return any(host == domain or host.endswith("." + domain)
+               for domain in LOCAL_DOMAINS[region])
+
+
+def article_digest(url):
+    """Ignore advertising/tracking URL parameters when deduplicating news."""
+    parsed = urlparse(url)
+    queries = [(key, value) for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+               if not key.casefold().startswith("utm_")
+               and key.casefold() not in ("at_campaign", "at_medium", "at_source",
+                                          "fbclid", "gclid")]
+    normalized = urlunparse((parsed.scheme.lower(), parsed.netloc.lower(), parsed.path,
+                             parsed.params, urlencode(sorted(queries)), ""))
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
 def select_articles(articles, region, already, kind, now):
     """Avoid stale hourly headlines and prefer relevant, recent announcements."""
     local = now.astimezone(ZoneInfo(MARKETS[region]["zone"]))
@@ -54,7 +79,7 @@ def select_articles(articles, region, already, kind, now):
     )
     selected = []
     for item in candidates:
-        digest = hashlib.sha256(item["url"].encode("utf-8")).hexdigest()
+        digest = article_digest(item["url"])
         if digest not in already and all(digest != other[1] for other in selected):
             selected.append((item, digest))
         if len(selected) >= (6 if kind == "morning" else 3):
@@ -97,6 +122,7 @@ def parse_news(diagnostics=None):
                     "title": title, "url": url, "summary": summary,
                     "published": published_at, "source": source["name"],
                     "regions": source["regions"], "weight": source["weight"],
+                    "source_url": source["url"],
                 })
         except (requests.RequestException, ValueError) as exc:
             counts["error"] = str(exc)[:150]
@@ -113,6 +139,7 @@ def rank(article, region):
     important = ("interest rate", "inflation", "gdp", "employment", "federal reserve",
                  "monetary policy", "financial stability", "tariff", "energy", "bank")
     return (article["weight"] * 10
+            + 30 * local_source(article, region)
             + 20 * any(word in text for word in words[region])
             + 5 * sum(word in text for word in important)
             + article["published"].timestamp() / 1e10)
