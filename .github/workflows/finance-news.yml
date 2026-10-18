@@ -1,5 +1,12 @@
 name: Telegram finance news (safe prototype)
 on:
+  push:
+    branches: [main]
+    paths:
+      - '**.py'
+      - 'config/sources.json'
+      - 'requirements.txt'
+      - '.github/workflows/finance-news.yml'
   schedule:
     - cron: '0,30 * * * *'
   workflow_dispatch:
