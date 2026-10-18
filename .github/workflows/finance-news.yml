@@ -23,6 +23,8 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Check RSS source health
         run: python check_sources.py
+      - name: Explain filtered RSS entries
+        run: python feed_diagnostics.py
       - name: Report country news coverage
         run: python news_coverage.py
       - name: Preview headlines
