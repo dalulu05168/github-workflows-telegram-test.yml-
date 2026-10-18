@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 import feedparser
 import requests
 from editorial import editorial_context
-from state_store import prune_sent_state
+from state_store import prune_sent_state, write_state_atomic
 
 BASE = Path(__file__).resolve().parent
 STATE = BASE / "state/sent.json"
@@ -231,7 +231,7 @@ def main():
         message = format_digest(region, kind, [item for item, _ in selected], local)
         if telegram_send(message):
             state[key] = [digest for _, digest in selected]
-            STATE.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            write_state_atomic(STATE, state)
             updated = True
     if updated:
         print("Delivery and deduplication state updated")
