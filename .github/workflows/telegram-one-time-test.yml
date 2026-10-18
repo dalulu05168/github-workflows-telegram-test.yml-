@@ -15,7 +15,6 @@ jobs:
   send-one-test:
     if: ${{ github.event.inputs.confirmation == 'SEND_ONE_TEST' }}
     runs-on: ubuntu-latest
-    environment: telegram-test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
