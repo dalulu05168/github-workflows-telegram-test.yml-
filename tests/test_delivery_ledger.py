@@ -163,7 +163,7 @@ class LedgerTests(unittest.TestCase):
             send_telegram_part("SUPERSECRET", "-1", "part", transport=transport)
         self.assertNotIn("SUPERSECRET", str(caught.exception))
         self.assertIsNone(caught.exception.__cause__)
-        self.assertIsNone(caught.exception.__context__ if caught.exception.__suppress_context__ else None)
+        self.assertTrue(caught.exception.__suppress_context__)
 
     def test_pruning_retains_current_and_drops_old(self):
         transport = StubTransport()
