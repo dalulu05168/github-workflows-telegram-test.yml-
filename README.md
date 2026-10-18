@@ -77,4 +77,4 @@ DRY_RUN=true PREVIEW_ALL=true RSS_CACHE_DIR=.rss-cache python news_bot.py
 
 ## 调度兜底
 
-若GitHub自然schedule没有事件，`scheduler/windows/`提供免费的本机备用触发脚本；只有用户安装后才会生效，电脑需开机、已登录且联网。它只调用现有正式工作流，不存Telegram密钥，不放宽选稿规则；已有运行或最近检查会跳过。`telegram-readonly-health.yml`仅核对机器人身份与目标权限，不发送任何消息，不能冒充真实送达验收。
+若GitHub自然schedule没有事件，`scheduler/windows/`提供免费的本机备用触发脚本（完整便携包双击 `install.cmd`，首次通过 GitHub 官方网页授权；`status.cmd` 查看状态，`uninstall.cmd` 移除）；只有用户安装后才会生效，电脑需开机、已登录且联网。它只调用现有正式工作流，不存Telegram密钥，不放宽选稿规则；已有运行或最近检查会跳过。`telegram-readonly-health.yml`仅核对机器人身份与目标权限，不发送任何消息，不能冒充真实送达验收。
