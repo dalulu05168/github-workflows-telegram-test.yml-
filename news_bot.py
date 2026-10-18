@@ -110,16 +110,18 @@ def split_telegram_message(message, limit=4000):
         raise ValueError("Message limit is too small")
     if len(message) <= limit:
         return [message]
+    # Prefer a new Telegram part at the start of a complete news item.
+    sections = re.split(r"(?=\\n\\n(?:🔵|🔴) [🇷🇴🇫🇷])", message)
     chunks = []
     current = ""
-    for line in message.splitlines(keepends=True):
+    for line in sections if len(sections) > 1 else message.splitlines(keepends=True):
         if len(line) > limit:
             if current:
                 chunks.append(current)
                 current = ""
-            while len(line) > limit:
-                chunks.append(line[:limit])
-                line = line[limit:]
+            # A single oversized news item must still be split safely.
+            chunks.extend(split_telegram_message(line, limit) if len(sections) > 1 else [line[i:i + limit] for i in range(0, len(line), limit)])
+            continue
         if len(current) + len(line) > limit:
             if current:
                 chunks.append(current)
