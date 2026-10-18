@@ -29,6 +29,8 @@ def report(articles, now, diagnostics=None):
             "local_time": local.isoformat(),
             "available_6h": sum(0 <= (now - a["published"]).total_seconds() <= 6 * 3600 for a in candidates),
             "available_18h": sum(0 <= (now - a["published"]).total_seconds() <= 18 * 3600 for a in candidates),
+            "morning_window_hours": morning_hours,
+            "available_morning_window": sum(0 <= (now - a["published"]).total_seconds() <= morning_hours * 3600 for a in candidates),
             "selected_hourly": len(hourly),
             "selected_morning": len(morning),
             "top_sources": [a["source"] for a, _ in hourly],
