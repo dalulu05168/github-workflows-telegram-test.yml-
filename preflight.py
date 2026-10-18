@@ -14,11 +14,16 @@ def inspect(base=BASE):
     if not sources:
         errors.append("No RSS sources configured")
     for index, source in enumerate(sources):
+        if not isinstance(source, dict):
+            errors.append(f"source #{index}: must be a JSON object")
+            continue
         name = source.get("name", f"source #{index}")
         parsed = urlparse(source.get("url", ""))
         if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
             errors.append(f"{name}: RSS URL must be HTTPS without embedded credentials")
-        if not set(source.get("regions", [])) or not set(source["regions"]) <= ALLOWED:
+        regions = source.get("regions")
+        if not isinstance(regions, list) or not regions or any(
+                not isinstance(region, str) or region not in ALLOWED for region in regions):
             errors.append(f"{name}: invalid region configuration")
         if not isinstance(source.get("weight"), int) or source["weight"] < 1:
             errors.append(f"{name}: invalid source weight")
@@ -35,8 +40,12 @@ def inspect(base=BASE):
     local_domains = {"RO": ("bvb.ro", "bnr.ro", "insse.ro"),
                      "FR": ("insee.fr", "euronext.com")}
     for source in sources:
-        host = (urlparse(source["url"]).hostname or "").lower()
+        if not isinstance(source, dict) or not isinstance(source.get("regions"), list):
+            continue
+        host = (urlparse(source.get("url", "")).hostname or "").lower()
         for region in source["regions"]:
+            if region not in ALLOWED:
+                continue
             if any(host == domain or host.endswith("." + domain) for domain in local_domains[region]):
                 hosts[region].append(source["name"])
     for region in sorted(ALLOWED):
