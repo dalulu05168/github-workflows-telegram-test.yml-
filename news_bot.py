@@ -112,7 +112,7 @@ def split_telegram_message(message, limit=4000):
         return [message]
 
     # Lookahead preserves the two newlines in the next news section.
-    sections = re.split(r"(?=\\n\\n(?:🔵|🔴) 🇷🇴 |\\n\\n(?:🔵|🔴) 🇫🇷 )", message)
+    sections = re.split(r"(?=\n\n(?:🔵|🔴) 🇷🇴 |\n\n(?:🔵|🔴) 🇫🇷 )", message)
     chunks = []
     current = ""
 
