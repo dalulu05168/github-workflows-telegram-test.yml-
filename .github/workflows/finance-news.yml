@@ -7,8 +7,6 @@ on:
       - 'config/sources.json'
       - 'requirements.txt'
       - '.github/workflows/finance-news.yml'
-  schedule:
-    - cron: '0,30 * * * *'
   workflow_dispatch:
 permissions:
   contents: read

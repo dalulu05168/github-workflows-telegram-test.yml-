@@ -1,7 +1,7 @@
 name: Telegram finance news (scheduled delivery)
 on:
   schedule:
-    - cron: '0,30 * * * *'
+    - cron: '7,17,27,37,47,57 * * * *'
   workflow_dispatch:
 permissions:
   contents: read
@@ -44,3 +44,25 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DELIVERY_GITHUB_TOKEN: ${{ github.token }}
         run: python live_runner.py
+      - name: Publish delivery status even when sending fails
+        if: always()
+        run: |
+          python - <<'PY_STATUS'
+          import json, os
+          from pathlib import Path
+          p = Path("reports/delivery-status.json")
+          if p.exists():
+              report = json.loads(p.read_text())
+              summary = "## News delivery status\n\n" + "```json\n" + json.dumps(report, ensure_ascii=False, indent=2) + "\n```\n"
+          else:
+              summary = "## News delivery did not start\nDependency installation, configuration preflight or tests failed before the sender ran. No delivery is claimed.\n"
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write(summary)
+          PY_STATUS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: news-delivery-status-${{ github.run_id }}
+          path: reports/delivery-status.json
+          if-no-files-found: warn
+          retention-days: 7
