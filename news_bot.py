@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 import feedparser
 import requests
 from editorial import editorial_context
+from state_store import prune_sent_state
 
 BASE = Path(__file__).resolve().parent
 STATE = BASE / "state/sent.json"
@@ -160,7 +161,7 @@ def format_digest(region, kind, chosen, local):
     return "\n".join(lines)
 
 def main():
-    state = json.loads(STATE.read_text(encoding="utf-8"))
+    state = prune_sent_state(json.loads(STATE.read_text(encoding="utf-8")), NOW)
     articles = parse_news()
     updated = False
     for region, market in MARKETS.items():
