@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Federal Reserve",
+    "url": "https://www.federalreserve.gov/feeds/press_all.xml",
+    "regions": [
+      "RO",
+      "FR"
+    ],
+    "weight": 4
+  },
+  {
+    "name": "ECB",
+    "url": "https://www.ecb.europa.eu/rss/press.html",
+    "regions": [
+      "RO",
+      "FR"
+    ],
+    "weight": 4
+  },
+  {
+    "name": "US BLS",
+    "url": "https://www.bls.gov/feed/news_release/rss.xml",
+    "regions": [
+      "RO",
+      "FR"
+    ],
+    "weight": 3
+  }
+]
