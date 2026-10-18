@@ -1,0 +1,58 @@
+"""Explain why official RSS entries do or do not become eligible news.
+
+Diagnostic only: no Telegram credentials or delivery calls.
+"""
+import calendar
+import datetime as dt
+import json
+import requests
+import feedparser
+from news_bot import SOURCES, NOW, WINDOW_HOURS, official_url
+
+
+def inspect_source(source, fetch=requests.get, now=None):
+    now = now or NOW
+    counts = {"total": 0, "missing_date": 0, "future_date": 0,
+              "older_than_fetch_window": 0, "invalid_official_link": 0,
+              "missing_title": 0, "eligible_6h": 0, "eligible_18h": 0,
+              "eligible_72h": 0, "eligible_fetch_window": 0}
+    result = {"source": source["name"], "regions": source["regions"], "counts": counts}
+    try:
+        response = fetch(source["url"], headers={"User-Agent": "FinanceNewsBot/0.3"}, timeout=20)
+        response.raise_for_status()
+        entries = feedparser.parse(response.content).entries
+        counts["total"] = len(entries)
+        for entry in entries:
+            stamp = entry.get("published_parsed") or entry.get("updated_parsed")
+            if not stamp:
+                counts["missing_date"] += 1
+                continue
+            published = dt.datetime.fromtimestamp(calendar.timegm(stamp), dt.timezone.utc)
+            age = (now - published).total_seconds() / 3600
+            if age < 0:
+                counts["future_date"] += 1
+                continue
+            if age > WINDOW_HOURS:
+                counts["older_than_fetch_window"] += 1
+                continue
+            if not official_url(entry.get("link", ""), source["url"]):
+                counts["invalid_official_link"] += 1
+                continue
+            if not entry.get("title", "").strip():
+                counts["missing_title"] += 1
+                continue
+            counts["eligible_fetch_window"] += 1
+            for hours in (6, 18, 72):
+                if age <= hours:
+                    counts[f"eligible_{hours}h"] += 1
+        result["ok"] = True
+    except (requests.RequestException, ValueError) as exc:
+        result["ok"] = False
+        result["error"] = str(exc)[:160]
+    return result
+
+
+if __name__ == "__main__":
+    print(json.dumps({"checked_at_utc": NOW.isoformat(),
+                      "sources": [inspect_source(source) for source in SOURCES]},
+                     ensure_ascii=False, indent=2))
