@@ -49,6 +49,9 @@ class CountryRoutingTests(unittest.TestCase):
   self.assertFalse(is_us_equity_event(a))
   self.assertEqual(len(select_articles([a],'FR',set(),'hourly',NOW)),1)
   self.assertIn('媒体市场观察',format_digest('FR','hourly',[a],NOW))
+  broadcast=format_digest('RO','hourly',[a],NOW,display_market='US')
+  self.assertIn('对罗马尼亚的可能影响：',broadcast)
+  self.assertIn('对法国的可能影响：',broadcast)
   a['published']=NOW-dt.timedelta(hours=7)
   self.assertEqual(select_articles([a],'FR',set(),'hourly',NOW),[])
  def test_promotional_forecast_is_not_accepted_as_market_analysis(self):

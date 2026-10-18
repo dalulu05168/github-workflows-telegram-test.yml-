@@ -6,6 +6,15 @@ on:
         description: 'SEND_ONE_NEWS authorizes one fresh news alert outside regular timing'
         required: true
         type: string
+      market:
+        description: 'Which market to verify with one eligible alert'
+        required: true
+        type: choice
+        default: RO
+        options:
+          - RO
+          - FR
+          - US
 permissions:
   contents: read
 concurrency:
@@ -26,6 +35,7 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - name: Send one eligible news alert and require Telegram receipt
         env:
+          NEWS_PROOF_SCOPE: ${{ github.event.inputs.market }}
           NEWS_PROOF_CONFIRM: ${{ github.event.inputs.confirmation }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

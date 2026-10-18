@@ -277,13 +277,15 @@ def due_slot(local):
     return None
 
 
-def format_digest(region, kind, chosen, local, translator=None):
+def format_digest(region, kind, chosen, local, translator=None, display_market=None):
     """Human-readable source facts, conditional impact and watch points."""
     market = MARKETS[region]
     period = "早间资讯" if kind == "morning" else ("午间资讯" if local.hour < 18 else "晚间资讯")
     country_time = market["name"] + "时间"
     lines = ["===== 资讯助理 =====", f"{market['flag']} {market['name']}｜{period}",
              f"{country_time} {local:%m月%d日 %H:%M}"]
+    if display_market == "US":
+        lines[1] = "🇺🇸 美股相关资讯｜" + ("媒体市场观察" if all(is_us_market_commentary(x) for x in chosen) else "市场与公司消息")
     if any(us_event_context(item,region) for item in chosen):
         lines.append("美股相关消息：本期包含已识别的公司或市场事件，发布时间见各条来源。")
     elif any(is_us_market_commentary(item) for item in chosen):
@@ -308,7 +310,8 @@ def format_digest(region, kind, chosen, local, translator=None):
         attribution = ("｜作者/供稿：" + item["author"]) if item.get("author") else ""
         lines += ["", f"{number}. {context.get('headline', title)}", "",
                   summary or "来源目前只提供标题，详细内容仍需查阅原文。",
-                  "", "可能影响：" + context["impact"],
+                  "", ("对罗马尼亚的可能影响：" if display_market=="US" else "可能影响：") + context["impact"],
+                  *((["", "对法国的可能影响：" + editorial_context(item,"FR")["impact"]]) if display_market=="US" else []),
                   "", "值得关注：" + context["watch"],
                   "", f"来源：{item['source']}{attribution}｜{item.get('time_label','发布时间')}：{published:%m月%d日 %H:%M}（{country_time}）" + translation_note,
                   "原文：" + item["url"]]
