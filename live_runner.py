@@ -42,6 +42,11 @@ def run_live(environment=None, now=None, articles=None,
     ledger = (ledger_factory(repository, token) if ledger_factory is not None
               else GitHubLedger(repository, token))
     ledger.load()
+    if ledger.sha is None:
+        # Verify persistence before RSS or Telegram, even for an empty digest.
+        # An initialized empty ledger is NOT a delivery receipt.
+        ledger.save()
+        print("Delivery ledger initialized; no messages claimed or sent.")
     ledger.prune(now)
     # Do not pull RSS until the controlled delivery mode and ledger are verified.
     if articles is None:
@@ -55,6 +60,7 @@ def run_live(environment=None, now=None, articles=None,
         local = now.astimezone(ZoneInfo(market["zone"]))
         slot = due_slot(local)
         if slot is None:
+            print(f"{region}: outside delivery window at {local.isoformat()}; no send.")
             continue
         kind, suffix = slot
         key = f"{region}:{suffix}"

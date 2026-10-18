@@ -32,6 +32,18 @@ class LiveRunnerTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             validate_live_env({"DRY_RUN": "false", "LIVE_APPROVED": "true"})
 
+    def test_no_news_initializes_persistence_without_claiming_or_sending(self):
+        import json
+        now = dt.datetime(2026, 10, 19, 4, 30, tzinfo=dt.timezone.utc)
+        transport = StubTransport()
+        factory = lambda r, t: GitHubLedger(r, t, transport=transport)
+        sender = lambda _: self.fail("no news must not cause a Telegram send")
+        self.assertFalse(run_live(ENV, now, [], factory, sender))
+        self.assertEqual(json.loads(transport.saved), {"version": 1, "slots": {}})
+        revision = transport.revision
+        self.assertFalse(run_live(ENV, now, [], factory, sender))
+        self.assertEqual(transport.revision, revision)
+
     def test_one_delivery_persists_and_next_runner_does_not_repeat(self):
         now = dt.datetime(2026, 10, 19, 4, 30, tzinfo=dt.timezone.utc)
         articles = [{"title": "BVB official notice", "summary": "",
