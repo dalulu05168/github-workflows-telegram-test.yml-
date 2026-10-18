@@ -5,6 +5,7 @@ Diagnostic only: no Telegram credentials or delivery calls.
 import calendar
 import datetime as dt
 import json
+from urllib.parse import urlparse
 import requests
 import feedparser
 from news_bot import SOURCES, NOW, WINDOW_HOURS, official_url
@@ -15,7 +16,8 @@ def inspect_source(source, fetch=requests.get, now=None):
     counts = {"total": 0, "missing_date": 0, "future_date": 0,
               "older_than_fetch_window": 0, "invalid_official_link": 0,
               "missing_title": 0, "eligible_6h": 0, "eligible_18h": 0,
-              "eligible_72h": 0, "eligible_fetch_window": 0}
+              "eligible_72h": 0, "eligible_fetch_window": 0,
+              "rejected_link_origins": {}}
     result = {"source": source["name"], "regions": source["regions"], "counts": counts}
     try:
         response = fetch(source["url"], headers={"User-Agent": "FinanceNewsBot/0.3"}, timeout=20)
@@ -37,6 +39,9 @@ def inspect_source(source, fetch=requests.get, now=None):
                 continue
             if not official_url(entry.get("link", ""), source["url"]):
                 counts["invalid_official_link"] += 1
+                link = urlparse(entry.get("link", ""))
+                origin = f"{link.scheme or '(none)'}://{link.hostname or '(no host)'}"
+                counts["rejected_link_origins"][origin] = counts["rejected_link_origins"].get(origin, 0) + 1
                 continue
             if not entry.get("title", "").strip():
                 counts["missing_title"] += 1
