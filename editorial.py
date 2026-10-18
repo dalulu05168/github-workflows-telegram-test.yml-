@@ -36,7 +36,7 @@ def editorial_context(article, region):
     summary = article.get("summary", "")
     content = (title + " " + summary).casefold()
     for topic, keywords, impact, watch in TOPICS:
-        if any(re.search(r"(?<!\\w)" + re.escape(word) + r"(?!\\w)", content) for word in keywords):
+        if any(re.search(r"(?<!\w)" + re.escape(word) + r"(?!\w)", content) for word in keywords):
             return {"topic": topic, "major": is_major(article), "impact": impact[region], "watch": watch}
     return {
         "topic": "other", "major": is_major(article),
