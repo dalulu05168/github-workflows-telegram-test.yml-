@@ -105,30 +105,43 @@ def rank(article, region):
 
 
 def split_telegram_message(message, limit=4000):
-    """Split on line boundaries while preserving all content and message order."""
+    """Losslessly split at news boundaries, then lines, then characters."""
     if limit < 100:
         raise ValueError("Message limit is too small")
     if len(message) <= limit:
         return [message]
-    # Prefer a new Telegram part at the start of a complete news item.
-    sections = re.split(r"(?=\n\n(?:🔵|🔴) [🇷🇴🇫🇷])", message)
+
+    # Lookahead preserves the two newlines in the next news section.
+    sections = re.split(r"(?=\\n\\n(?:🔵|🔴) 🇷🇴 |\\n\\n(?:🔵|🔴) 🇫🇷 )", message)
     chunks = []
     current = ""
-    for line in sections if len(sections) > 1 else message.splitlines(keepends=True):
-        if len(line) > limit:
-            if current:
+
+    def append_piece(piece):
+        nonlocal current
+        if not piece:
+            return
+        if len(current) + len(piece) > limit and current:
+            chunks.append(current)
+            current = ""
+        if len(piece) <= limit:
+            current += piece
+            return
+        # Split an unusually long single section without recursion.
+        for line in piece.splitlines(keepends=True):
+            if len(current) + len(line) > limit and current:
                 chunks.append(current)
                 current = ""
-            # A single oversized news item must still be split safely.
-            chunks.extend(split_telegram_message(line, limit) if len(sections) > 1 else [line[i:i + limit] for i in range(0, len(line), limit)])
-            continue
-        if len(current) + len(line) > limit:
-            if current:
-                chunks.append(current)
-            current = ""
-        current += line
+            while len(line) > limit:
+                chunks.append(line[:limit])
+                line = line[limit:]
+            current += line
+
+    for section in sections:
+        append_piece(section)
     if current:
         chunks.append(current)
+    assert "".join(chunks) == message
+    assert all(0 < len(chunk) <= limit for chunk in chunks)
     return chunks
 
 
