@@ -48,3 +48,12 @@ DRY_RUN=true PREVIEW_ALL=true python news_bot.py
 - 解析层保留最近 96h 的候选；**只有当地周一晨报**才允许回看最近 72h，普通晨报仍为 18h，每小时快报仍为 6h。旧文章仍受已发送 ID 去重限制（跨运行持久化仍未实现）。
 - `Report country news coverage` 新增 `feed_diagnostics`：各来源抓取条数、接收条数、无日期、超过 96h、官方链接/标题不合格、请求错误。需要下一次 Actions 日志确认这些计数及新逻辑是否通过。
 - **本轮 GitHub 提交成功，但最新 Actions 运行尚未验证**；本地无法安装 feedparser，不能声称全套测试已通过。
+
+## 2026-10-18 本地优先与运行摘要（本轮）
+
+- 按官方来源域名对 RO 的 BVB/BNR/INSSE、FR 的 INSEE/Euronext 加分，仍保留国际重大信息；仅改变候选排序，不凭空增加新闻。
+- 对新闻 URL 规范化并去除 `utm_*`、`fbclid` 等追踪参数，在同一次筛选中去重；**跨次运行去重依旧需持久化状态**。
+- 07:30–07:59 的晨报时段可容忍 GitHub Actions 启动晚于 07:50，避免漏报；仍不能保证平台延迟超过 08:00 时不错过。
+- `Report country news coverage` 现在写入 GitHub Actions 运行摘要：RO/FR 选中数量、周一晨报窗口及各 RSS 的拒绝原因。用户无需靠猜测绿色勾号。
+- 本地仅使用从核心函数重建的离线测试文件执行 4 项测试（全部通过）；**没有运行完整仓库依赖测试或新提交的全部单元测试**，需要后续 GitHub Actions 验证。
+- `DRY_RUN=true`、无密钥、跨次持久化 disabled 的边界保持不变。
