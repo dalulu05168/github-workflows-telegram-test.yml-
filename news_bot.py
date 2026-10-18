@@ -153,6 +153,9 @@ def telegram_send(message):
         for i, chunk in enumerate(chunks, 1):
             print(f"DRY_RUN enabled; preview part {i}/{len(chunks)}:\n" + chunk)
         return False
+    if os.getenv("LIVE_APPROVED", "false").lower() != "true":
+        print("Live delivery is locked: LIVE_APPROVED is not true")
+        return False
     if not token or not chat:
         print("Telegram secrets absent; skipping delivery")
         return False
