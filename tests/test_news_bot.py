@@ -1,11 +1,22 @@
 import datetime as dt
 import unittest
 from zoneinfo import ZoneInfo
-from news_bot import due_slot, rank, format_digest, select_articles
+from news_bot import due_slot, rank, format_digest, select_articles, preview_slot
 class SchedulingTests(unittest.TestCase):
     def test_morning(self):
         for zone in ("Europe/Bucharest","Europe/Paris"):
             self.assertEqual(due_slot(dt.datetime(2026,10,18,7,30,tzinfo=ZoneInfo(zone)))[0],"morning")
+    def test_preview_keeps_morning_slot(self):
+        local = dt.datetime(2026, 10, 19, 7, 30,
+                            tzinfo=ZoneInfo("Europe/Bucharest"))
+        self.assertEqual(preview_slot(local, preview_all=True, dry_run=True)[0], "morning")
+
+    def test_preview_outside_slot_uses_hourly(self):
+        local = dt.datetime(2026, 10, 19, 5, 30,
+                            tzinfo=ZoneInfo("Europe/Paris"))
+        self.assertEqual(preview_slot(local, preview_all=True, dry_run=True)[0], "hourly")
+        self.assertIsNone(preview_slot(local, preview_all=True, dry_run=False))
+
     def test_hourly(self):
         self.assertIsNone(due_slot(dt.datetime(2026,10,18,7,10,tzinfo=ZoneInfo("Europe/Paris"))))
         self.assertEqual(due_slot(dt.datetime(2026,10,18,9,10,tzinfo=ZoneInfo("Europe/Paris")))[0],"hourly")
