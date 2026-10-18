@@ -25,3 +25,5 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DRY_RUN: 'true'
         run: python news_bot.py
+      - name: Preview indicative market sessions (no delivery)
+        run: python preview_market_notices.py
