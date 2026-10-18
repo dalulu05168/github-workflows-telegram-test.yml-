@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from urllib.parse import urlparse, urljoin, parse_qsl, urlencode, urlunparse
 import feedparser
 import requests
+from rss_cache import load_feed
 from editorial import editorial_context
 from state_store import prune_sent_state, write_state_atomic
 
@@ -112,9 +113,12 @@ def parse_news(diagnostics=None):
         if diagnostics is not None:
             diagnostics.append(counts)
         try:
-            response = requests.get(source["url"], headers=HEADERS, timeout=20)
-            response.raise_for_status()
-            entries = feedparser.parse(response.content).entries
+            cached = load_feed(source["url"])
+            if cached is None:
+                response = requests.get(source["url"], headers=HEADERS, timeout=20)
+                response.raise_for_status()
+                cached = response.content
+            entries = feedparser.parse(cached).entries
             counts["entries"] = len(entries)
             for entry in entries:
                 published = entry.get("published_parsed") or entry.get("updated_parsed")
