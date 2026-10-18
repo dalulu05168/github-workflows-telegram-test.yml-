@@ -8,6 +8,7 @@ import json
 from urllib.parse import urlparse
 import requests
 import feedparser
+from rss_cache import load_feed
 import re
 from collections import Counter
 from news_bot import SOURCES, NOW, WINDOW_HOURS, official_url, resolve_official_link
@@ -24,9 +25,12 @@ def inspect_source(source, fetch=requests.get, now=None):
     missing_link_fields = Counter()
     embedded_link_origins = Counter()
     try:
-        response = fetch(source["url"], headers={"User-Agent": "FinanceNewsBot/0.3"}, timeout=20)
-        response.raise_for_status()
-        entries = feedparser.parse(response.content).entries
+        cached = load_feed(source["url"]) if fetch is requests.get else None
+        if cached is None:
+            response = fetch(source["url"], headers={"User-Agent": "FinanceNewsBot/0.3"}, timeout=20)
+            response.raise_for_status()
+            cached = response.content
+        entries = feedparser.parse(cached).entries
         counts["total"] = len(entries)
         for entry in entries:
             stamp = entry.get("published_parsed") or entry.get("updated_parsed")
