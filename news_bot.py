@@ -106,7 +106,7 @@ def telegram_send(message):
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     chat = os.getenv("TELEGRAM_CHAT_ID")
     if os.getenv("DRY_RUN", "true").lower() != "false":
-        print("DRY_RUN enabled; preview:\\n" + message)
+        print("DRY_RUN enabled; preview:\n" + message)
         return False
     if not token or not chat:
         print("Telegram secrets absent; skipping delivery")
@@ -125,7 +125,7 @@ def telegram_send(message):
 
 
 def due_slot(local):
-    # Schedule runs every ten minutes; allow a 20-minute grace period for delays.
+    # GitHub Actions runs at UTC :00/:30; allow a 20-minute grace period.
     minutes = local.hour * 60 + local.minute
     if 450 <= minutes <= 470:
         return ("morning", local.strftime("%Y-%m-%d") + "-morning")
