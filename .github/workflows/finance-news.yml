@@ -4,7 +4,7 @@ on:
     - cron: '0,30 * * * *'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: finance-news
   cancel-in-progress: false
