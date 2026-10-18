@@ -1,6 +1,6 @@
 import datetime as dt
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from feed_diagnostics import inspect_source
 
 SOURCE = {"name": "BVB", "url": "https://www.bvb.ro/rss", "regions": ["RO"]}
@@ -11,10 +11,7 @@ class DiagnosticsTests(unittest.TestCase):
         now = dt.datetime(2026, 10, 18, 4, tzinfo=dt.timezone.utc)
         response = Mock()
         response.content = b'<rss><channel><item><title>Friday news</title><link>https://www.bvb.ro/news</link><pubDate>Fri, 16 Oct 2026 10:00:00 GMT</pubDate></item></channel></rss>'
-        with patch("feed_diagnostics.feedparser.parse") as parse:
-            import feedparser
-            parse.return_value = feedparser.parse(response.content)
-            result = inspect_source(SOURCE, fetch=lambda *a, **k: response, now=now)
+        result = inspect_source(SOURCE, fetch=lambda *a, **k: response, now=now)
         self.assertEqual(result["counts"]["eligible_fetch_window"], 1)
         self.assertEqual(result["counts"]["eligible_18h"], 0)
         self.assertEqual(result["counts"]["eligible_72h"], 1)
