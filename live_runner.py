@@ -29,12 +29,26 @@ def validate_live_env(environment):
 
 
 def run_live(environment=None, now=None, articles=None,
-             ledger_factory=None, telegram_sender=None):
+             ledger_factory=None, telegram_sender=None, report=None):
     environment = os.environ if environment is None else environment
+    report = {} if report is None else report
+    report.update({"outcome":"STARTED", "markets":{}, "sent_markets":[], "source_diagnostics":[]})
     if not validate_live_env(environment):
+        report["outcome"] = "DELIVERY_LOCKED"
         print("Live delivery locked; no Telegram or GitHub write requests.")
         return False
     now = NOW if now is None else now
+    report["checked_at"] = now.isoformat()
+    report["trigger"] = environment.get("GITHUB_EVENT_NAME", "local")
+    active_slots = {}
+    for region, market in MARKETS.items():
+        local = now.astimezone(ZoneInfo(market["zone"]))
+        active_slots[region] = due_slot(local)
+        report["markets"][region] = {"local_time":local.isoformat(), "status":"PENDING" if active_slots[region] else "OUTSIDE_WINDOW"}
+    if not any(active_slots.values()):
+        report["outcome"] = "OUTSIDE_DELIVERY_WINDOWS"
+        print("Outside all delivery windows; no RSS, ledger or Telegram requests.")
+        return False
     repository = environment["GITHUB_REPOSITORY"]
     token = environment["DELIVERY_GITHUB_TOKEN"]
     chat_id = environment["TELEGRAM_CHAT_ID"]
@@ -50,7 +64,7 @@ def run_live(environment=None, now=None, articles=None,
     ledger.prune(now)
     # Do not pull RSS until the controlled delivery mode and ledger are verified.
     if articles is None:
-        articles = parse_news()
+        articles = parse_news(diagnostics=report["source_diagnostics"])
     sender = telegram_sender or (
         lambda text: send_telegram_part(bot_token, chat_id, text))
     any_sent = False
@@ -58,11 +72,13 @@ def run_live(environment=None, now=None, articles=None,
     translator = FreeTranslator()
     for region, market in MARKETS.items():
         local = now.astimezone(ZoneInfo(market["zone"]))
-        slot = due_slot(local)
+        slot = active_slots[region]
         if slot is None:
             print(f"{region}: outside delivery window at {local.isoformat()}; no send.")
             continue
         kind, suffix = slot
+        market_report = report["markets"][region]
+        market_report["slot"] = suffix
         key = f"{region}:{suffix}"
         unfinished = ledger.unfinished_slots(region)
         if unfinished:
@@ -70,20 +86,26 @@ def run_live(environment=None, now=None, articles=None,
             # between confirmed parts. Resume only the current delivery window;
             # older digests need review rather than delivering stale news.
             if unfinished != [key]:
+                market_report["status"] = "BLOCKED_PRIOR_UNFINISHED_SLOT"
                 blocked.append(region)
                 continue
             try:
                 ledger.resume(key, sender)
             except DeliveryUncertain:
+                market_report["status"] = "DELIVERY_UNCERTAIN"
                 blocked.append(region)
                 continue
+            market_report["status"] = "SENT_RESUMED"
+            report["sent_markets"].append(region)
             any_sent = True
             continue
         if key in ledger.slots:
+            market_report["status"] = "ALREADY_RECORDED"
             continue
         already = ledger.claimed_articles(region)
         selected = select_articles(articles, region, already, kind, now)
         if not selected:
+            market_report["status"] = "NO_ELIGIBLE_NEWS"
             print(f"No eligible articles for {region} {suffix}; no send.")
             continue
         message = format_digest(region, kind, [item for item, _ in selected], local, translator=translator)
@@ -94,13 +116,32 @@ def run_live(environment=None, now=None, articles=None,
         try:
             ledger.resume(key, sender)
         except DeliveryUncertain:
+            market_report["status"] = "DELIVERY_UNCERTAIN"
             blocked.append(region)
             continue
+        market_report["status"] = "SENT"
+        market_report["article_count"] = len(selected)
+        report["sent_markets"].append(region)
         any_sent = True
     if blocked:
+        report["outcome"] = "MANUAL_RECONCILIATION_REQUIRED"
         raise DeliveryUncertain("Manual delivery review required for " + ", ".join(blocked))
+    report["outcome"] = "DELIVERED" if any_sent else "NO_DELIVERY"
+    if any(x.get("error") for x in report["source_diagnostics"]):
+        report["source_health"] = "DEGRADED"
+    else:
+        report["source_health"] = "NO_RECORDED_SOURCE_ERRORS"
     return any_sent
 
 
 if __name__ == "__main__":
-    run_live()
+    from delivery_report import write_delivery_report
+    status = {}
+    try:
+        run_live(report=status)
+    except Exception as exc:
+        status["outcome"] = "FAILED"
+        status["error_type"] = type(exc).__name__
+        raise
+    finally:
+        write_delivery_report(status)

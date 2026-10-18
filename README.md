@@ -18,8 +18,8 @@
 ## 运行方式
 
 - `finance-news.yml`：抓取、测试和预览，始终 `DRY_RUN=true`、只读权限、无 Telegram 密钥。
-- `finance-news-live.yml`：正式发送入口，按原配置 UTC 整点、半点定时运行，无额外启用变量。只允许 main 分支；也可手动运行。
-- 两国分别按当地时间 07:30 晨报，此后 08:30、09:30……每小时筛选快报，允许在当小时后半小时内延迟启动；正式入口在 UTC :00/:30 唤醒。周一晨报回看 72 小时，其他晨报 18 小时，快报 6 小时。GitHub 调度可能延迟，不保证准点送达。
+- `finance-news-live.yml`：正式发送入口，每小时UTC第7、17、27、37、47、57分钟唤醒，无额外启用变量。只允许 main 分支；也可手动运行。
+- 两国分别按当地时间 07:30 晨报，此后 08:30、09:30……每小时筛选快报，允许在当小时后半小时内延迟启动；正式入口每10分钟错峰唤醒，晨报与小时快报的发布窗口仍由两国当地时间判断。周一晨报回看 72 小时，其他晨报 18 小时，快报 6 小时。GitHub 调度可能延迟，不保证准点送达。
 - 无合格新闻不发送。法国与罗马尼亚独立选稿、去重，同一新闻可以分别向两国发布。
 
 ## 首次启用
@@ -68,3 +68,9 @@ DRY_RUN=true PREVIEW_ALL=true RSS_CACHE_DIR=.rss-cache python news_bot.py
 法国财政总司官方新闻源入口：<https://www.tresor.economie.gouv.fr/Flux>。该源是经济研究及政策发布，INSEE BDM 仍为统计数据更新源。Atom 仅有更新时间时显示「源更新时间」，不冒称首次发布时间。
 
 市场开市提示仍为独立预览，未随新闻发送；尚未接入节假日及实时开市验证。程序处理官方 RSS 摘要，不声称逐篇完成全文事实核查。历史验收见 `RELEASE_CHECKLIST.md`，当前运行说明以本文件为准。
+
+## 调度修复（2026-10-18）
+
+只有正式finance-news-live.yml保留定时，预览工作流仅提交或手动触发。正式任务在UTC第7、17、27、37、47、57分钟唤醒，避开整点负载；当地07:30晨报及08:30起每小时快报的窗口不变。每窗口有多个唤醒机会，已发送由持久账本去重；没有新闻不发送，未知发送结果仍要求人工对账。GitHub Actions不保证准点执行；cron更新不等于自然定时已经恢复，须查event=schedule运行证据。
+
+每次正式运行的Summary及news-delivery-status运行附件包含分国状态：OUTSIDE_WINDOW、NO_ELIGIBLE_NEWS、ALREADY_RECORDED、BLOCKED_PRIOR_UNFINISHED_SLOT、DELIVERY_UNCERTAIN、SENT/SENT_RESUMED。来源错误单独记录；工作流成功不代表已经送达。启动依赖或测试失败也会显示尚未开始投递。非时段不抓RSS、不写账本、不访问Telegram。
