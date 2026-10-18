@@ -16,14 +16,23 @@ class DeliverySafetyTests(unittest.TestCase):
                 self.assertFalse(news_bot.telegram_send("test"))
                 post.assert_not_called()
 
-    def test_long_message_split_and_delivered(self):
+    def test_live_multipart_fails_closed(self):
+        with patch.dict("os.environ", {
+            "DRY_RUN": "false", "TELEGRAM_BOT_TOKEN": "fake", "TELEGRAM_CHAT_ID": "-1"
+        }, clear=True):
+            with patch("news_bot.requests.post") as post:
+                with self.assertRaises(RuntimeError):
+                    news_bot.telegram_send("x" * 4100)
+                post.assert_not_called()
+
+    def test_single_live_message_uses_one_request(self):
         with patch.dict("os.environ", {
             "DRY_RUN": "false", "TELEGRAM_BOT_TOKEN": "fake", "TELEGRAM_CHAT_ID": "-1"
         }, clear=True):
             with patch("news_bot.requests.post") as post:
                 post.return_value.json.return_value = {"ok": True}
-                self.assertTrue(news_bot.telegram_send("x" * 4100))
-                self.assertEqual(post.call_count, 2)
+                self.assertTrue(news_bot.telegram_send("short message"))
+                post.assert_called_once()
 
     def test_prefers_complete_news_boundary(self):
         first = "开头" + "A" * 2300
