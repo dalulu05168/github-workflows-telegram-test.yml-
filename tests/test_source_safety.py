@@ -63,6 +63,25 @@ class SourceSafetyTests(unittest.TestCase):
                         "javascript:alert(1)", "", "/\\\\evil.example/path"):
             self.assertEqual(resolve_official_link(hostile, feed), "")
 
+    def test_parse_news_accepts_relative_bvb_link(self):
+        now = dt.datetime(2026, 10, 19, 5, tzinfo=dt.timezone.utc)
+        entry = {"title": "BVB market notice",
+                 "link": "/FinancialInstruments/SelectedData/NewsItem/sample",
+                 "published_parsed": (now - dt.timedelta(hours=40)).timetuple(),
+                 "summary": "Issuer notice"}
+        response = Mock(content=b"fixture")
+        response.raise_for_status.return_value = None
+        feed = {"name": "BVB", "url": "https://www.bvb.ro/Rss/OperatiuniSiComunicateBVB.ashx",
+                "regions": ["RO"], "weight": 5}
+        with patch("news_bot.NOW", now), patch("news_bot.SOURCES", [feed]):
+            with patch("news_bot.requests.get", return_value=response):
+                with patch("news_bot.feedparser.parse", return_value=Mock(entries=[entry])):
+                    diagnostics = []
+                    articles = parse_news(diagnostics=diagnostics)
+        self.assertEqual(len(articles), 1)
+        self.assertEqual(articles[0]["url"], "https://www.bvb.ro/FinancialInstruments/SelectedData/NewsItem/sample")
+        self.assertEqual(diagnostics[0]["accepted"], 1)
+
     def test_country_specific_deduplication(self):
         now=dt.datetime(2026,10,18,10,tzinfo=dt.timezone.utc)
         item={"title":"test","summary":"","weight":4,"url":"https://www.ecb.europa.eu/test",
