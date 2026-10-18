@@ -33,6 +33,13 @@ class DeliverySafetyTests(unittest.TestCase):
         self.assertEqual(chunks[0], first)
         self.assertEqual(chunks[1], second)
 
+    def test_oversized_single_news_never_recurses(self):
+        article = "\n\n🔴 🇷🇴 罗马尼亚｜财经资讯快报" + "X" * 9000
+        message = "Intro" + article
+        chunks = split_telegram_message(message)
+        self.assertEqual("".join(chunks), message)
+        self.assertTrue(all(0 < len(c) <= 4000 for c in chunks))
+
     def test_split_preserves_full_text(self):
         original = "A" * 3999 + "\n" + "B" * 100
         chunks = split_telegram_message(original)
