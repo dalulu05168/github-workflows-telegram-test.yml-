@@ -29,3 +29,21 @@ class SchedulerObservability(unittest.TestCase):
             self.assertFalse(run_live(ENV,now=dt.datetime(2026,10,19,4,37,tzinfo=dt.timezone.utc),articles=[],ledger_factory=lambda r,t:GitHubLedger(r,t,transport=transport),report=report))
         self.assertEqual(report['markets']['RO']['status'],'NO_ELIGIBLE_NEWS')
         self.assertEqual(report['sent_markets'],[])
+
+    def test_cloud_wakeup_origin_is_reported_without_claiming_delivery(self):
+        report={}
+        with patch('live_runner.GitHubLedger') as ledger, patch('live_runner.parse_news') as parser:
+            self.assertFalse(run_live(dict(ENV,WAKEUP_ORIGIN='cloudflare',GITHUB_EVENT_NAME='workflow_dispatch'),now=dt.datetime(2026,10,18,1,0,tzinfo=dt.timezone.utc),report=report))
+            ledger.assert_not_called();parser.assert_not_called()
+        self.assertEqual(report['trigger_origin'],'cloudflare')
+        self.assertEqual(report['trigger'],'workflow_dispatch')
+        self.assertEqual(report['sent_markets'],[])
+
+    def test_cloud_deployment_is_manual_and_does_not_receive_telegram_secrets(self):
+        workflow=(ROOT/'.github/workflows/cloudflare-news-wakeup-deploy.yml').read_text()
+        self.assertIn('workflow_dispatch:',workflow)
+        self.assertNotIn('  schedule:',workflow)
+        self.assertNotIn('TELEGRAM_BOT_TOKEN',workflow)
+        self.assertNotIn('TELEGRAM_CHAT_ID',workflow)
+        self.assertIn('CLOUDFLARE_GITHUB_TOKEN',workflow)
+        self.assertIn('trigger_origin:',(ROOT/'.github/workflows/finance-news-live.yml').read_text())

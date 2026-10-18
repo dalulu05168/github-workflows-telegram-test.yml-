@@ -1,8 +1,19 @@
 name: Telegram finance news (scheduled delivery)
+run-name: Finance news | ${{ github.event.inputs.trigger_origin || github.event_name }}
 on:
   schedule:
     - cron: '8,18,28,38,48,58 * * * *'
   workflow_dispatch:
+    inputs:
+      trigger_origin:
+        description: 'Wakeup origin; does not change publishing windows or news rules'
+        required: false
+        default: manual
+        type: choice
+        options:
+          - manual
+          - windows
+          - cloudflare
 permissions:
   contents: read
 concurrency:
@@ -38,6 +49,7 @@ jobs:
           python -m unittest discover -s tests -v
       - name: Deliver eligible Chinese-translated news with persistent ledger
         env:
+          WAKEUP_ORIGIN: ${{ github.event.inputs.trigger_origin || github.event_name }}
           DRY_RUN: 'false'
           LIVE_APPROVED: 'true'
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

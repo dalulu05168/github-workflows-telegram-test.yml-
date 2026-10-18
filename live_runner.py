@@ -41,6 +41,7 @@ def run_live(environment=None, now=None, articles=None,
     now = NOW if now is None else now
     report["checked_at"] = now.isoformat()
     report["trigger"] = environment.get("GITHUB_EVENT_NAME", "local")
+    report["trigger_origin"] = environment.get("WAKEUP_ORIGIN", report["trigger"])
     active_slots = {}
     for region, market in MARKETS.items():
         local = now.astimezone(ZoneInfo(market["zone"]))

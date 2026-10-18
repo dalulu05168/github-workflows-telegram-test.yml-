@@ -10,3 +10,9 @@ reports/
 scheduler/windows/bin/
 scheduler/windows/logs/
 scheduler/windows/dispatcher.lock
+
+node_modules/
+.wrangler/
+.dev.vars
+.dev.vars.*
+scheduler/cloudflare/wrangler.deploy.toml

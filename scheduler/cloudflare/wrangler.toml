@@ -1,0 +1,14 @@
+name = "telegram-finance-news-wakeup"
+main = "src/worker.js"
+compatibility_date = "2025-10-01"
+workers_dev = true
+
+[vars]
+DEPLOYMENT_REPOSITORY = "dalulu05168/github-workflows-telegram-test.yml-"
+
+[triggers]
+crons = ["*/10 * * * *"]
+
+[observability]
+enabled = true
+head_sampling_rate = 1

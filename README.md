@@ -106,3 +106,10 @@ DRY_RUN=true PREVIEW_ALL=true RSS_CACHE_DIR=.rss-cache python news_bot.py
 - 法国＋美国相关事件：法国事件和美国事件都围绕 CAC 40、EUR/USD、法国银行/工业/奢侈品等实际相关渠道编排。
 - 同一美国事件可以分别进入两套推送，但分析、观察板块和指标必须对应各自目标国家，不共用一段混写的影响。
 - 不设置独立 US 推送入口。事件与标题新鲜度分别核对；新发表的预测或市场评论不能替代新的公司、经济或市场事件。
+
+
+### 云端定时触发（不依赖电脑）
+
+`scheduler/cloudflare/` 提供 Cloudflare Workers 定时器，按既有 RO/FR 本地窗口唤醒同一正式工作流。GitHub Actions 的 **Deploy Cloudflare news wakeup** 是部署入口；需先配置 Cloudflare 账户 ID、Worker/KV 编辑 token 和仅限本仓库的 GitHub Actions 触发 token。详细步骤见 [Cloudflare 定时器说明](scheduler/cloudflare/README.md)。
+
+状态须分别验收：代码通过测试、Cloudflare 部署配置成功、自然 Cron 心跳、cloudflare 来源的 GitHub 运行、Telegram 实际回执。不能把其中一步当作全部完成。验证完成前保留 Windows 备用任务。
