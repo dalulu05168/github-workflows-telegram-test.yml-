@@ -18,6 +18,8 @@ concurrency:
 jobs:
   send:
     runs-on: ubuntu-latest
+    env:
+      RSS_CACHE_DIR: ${{ runner.temp }}/finance-rss-cache
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
