@@ -1,73 +1,155 @@
-import os,json,hashlib,datetime,html
+"""Verified source finance digest; no invented quotes, prices or market impact."""
+import calendar
+import datetime as dt
+import hashlib
+import html
+import json
+import os
+import re
 from pathlib import Path
 from zoneinfo import ZoneInfo
-import requests,feedparser
+import feedparser
+import requests
 
-ROOT=Path(__file__).parent
-STATE=ROOT/"state/sent.json"
-SOURCES=json.loads((ROOT/"config/sources.json").read_text())
-NOW=datetime.datetime.now(datetime.timezone.utc)
-REGIONS={"RO":("🇷🇴","罗马尼亚","Europe/Bucharest"),"FR":("🇫🇷","法国","Europe/Paris")}
+BASE = Path(__file__).resolve().parent
+STATE = BASE / "state/sent.json"
+SOURCES = json.loads((BASE / "config/sources.json").read_text(encoding="utf-8"))
+NOW = dt.datetime.now(dt.timezone.utc)
+MARKETS = {
+    "RO": {"flag": "🇷🇴", "name": "罗马尼亚", "zone": "Europe/Bucharest"},
+    "FR": {"flag": "🇫🇷", "name": "法国", "zone": "Europe/Paris"},
+}
+WINDOW_HOURS = 30
+HEADERS = {"User-Agent": "FinanceNewsBot/0.2 (public news monitoring)"}
 
-def fetch():
-    items=[]
+
+def parse_news():
+    results = []
     for source in SOURCES:
         try:
-            response=requests.get(source["url"],timeout=18,headers={"User-Agent":"FinanceNewsBot/0.1"})
+            response = requests.get(source["url"], headers=HEADERS, timeout=20)
             response.raise_for_status()
             for entry in feedparser.parse(response.content).entries:
-                stamp=entry.get("published_parsed") or entry.get("updated_parsed")
-                if not stamp: continue
-                from calendar import timegm
-                published=datetime.datetime.fromtimestamp(timegm(stamp),datetime.timezone.utc)
-                age=(NOW-published).total_seconds()
-                if not 0<=age<=36*3600: continue
-                link=entry.get("link","")
-                if not link.startswith("https://"): continue
-                title=html.unescape(entry.get("title","")).strip()
-                if not title: continue
-                items.append(dict(title=title,link=link,source=source["name"],regions=source["regions"],weight=source["weight"],published=published))
-        except Exception as exc:
-            print("Source unavailable:",source["name"],str(exc))
-    return sorted(items,key=lambda x:(-x["weight"],-x["published"].timestamp()))
+                published = entry.get("published_parsed") or entry.get("updated_parsed")
+                if not published:
+                    continue
+                published_at = dt.datetime.fromtimestamp(calendar.timegm(published), dt.timezone.utc)
+                age = (NOW - published_at).total_seconds()
+                if not 0 <= age <= WINDOW_HOURS * 3600:
+                    continue
+                url = entry.get("link", "")
+                title = re.sub(r"<[^>]*>", "", html.unescape(entry.get("title", ""))).strip()
+                if not url.startswith("https://") or not title:
+                    continue
+                summary = re.sub(r"<[^>]*>", " ", html.unescape(entry.get("summary", "")))
+                summary = " ".join(summary.split())[:450]
+                results.append({
+                    "title": title, "url": url, "summary": summary,
+                    "published": published_at, "source": source["name"],
+                    "regions": source["regions"], "weight": source["weight"],
+                })
+        except (requests.RequestException, ValueError) as exc:
+            print(f"Unavailable feed {source['name']}: {exc}")
+    return results
 
-def send(message):
-    token=os.getenv("TELEGRAM_BOT_TOKEN")
-    chat=os.getenv("TELEGRAM_CHAT_ID")
-    if not token or not chat: raise RuntimeError("Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID secrets")
-    r=requests.post(f"https://api.telegram.org/bot{token}/sendMessage",json={"chat_id":chat,"text":message,"disable_web_page_preview":True},timeout=20)
-    r.raise_for_status()
-    if not r.json().get("ok"): raise RuntimeError("Telegram send failed")
+
+def rank(article, region):
+    text = (article["title"] + " " + article["summary"]).lower()
+    words = {
+        "RO": ("romania", "romanian", "bucharest", "bvb", "bnr", "ron", "bet index"),
+        "FR": ("france", "french", "paris", "cac 40", "insee", "euronext"),
+    }
+    important = ("interest rate", "inflation", "gdp", "employment", "federal reserve",
+                 "monetary policy", "financial stability", "tariff", "energy", "bank")
+    return (article["weight"] * 10
+            + 20 * any(word in text for word in words[region])
+            + 5 * sum(word in text for word in important)
+            + article["published"].timestamp() / 1e10)
+
+
+def telegram_send(message):
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    chat = os.getenv("TELEGRAM_CHAT_ID")
+    if not token or not chat:
+        print("Telegram secrets absent; skipping delivery")
+        return False
+    if os.getenv("DRY_RUN", "true").lower() != "false":
+        print("DRY_RUN enabled; preview:\n" + message)
+        return False
+    resp = requests.post(
+        f"https://api.telegram.org/bot{token}/sendMessage",
+        json={"chat_id": chat, "text": message, "disable_web_page_preview": True},
+        timeout=25,
+    )
+    resp.raise_for_status()
+    if not resp.json().get("ok"):
+        raise RuntimeError("Telegram API returned not ok")
+    return True
+
+
+def due_slot(local):
+    # Schedule runs every ten minutes; allow a 20-minute grace period for delays.
+    minutes = local.hour * 60 + local.minute
+    if 450 <= minutes <= 470:
+        return ("morning", local.strftime("%Y-%m-%d") + "-morning")
+    if local.minute <= 20 and local.hour >= 8:
+        return ("hourly", local.strftime("%Y-%m-%d-%H"))
+    return None
+
+
+def format_digest(region, kind, chosen, local):
+    market = MARKETS[region]
+    heading = "晨间财经资讯｜昨夜美国及本国重点" if kind == "morning" else "财经资讯快报"
+    lines = ["===== 资讯助理 =====",
+             f"{market['flag']} {market['name']}｜{heading}",
+             f"🕒 编制时间：{local:%Y-%m-%d %H:%M %Z}",
+             "说明：以下为官方来源已发布资讯；未取得核验行情，不提供指数数值或推测市场影响。"]
+    for idx, item in enumerate(chosen, 1):
+        published = item["published"].astimezone(ZoneInfo(market["zone"]))
+        lines += ["", f"【{idx}】📰 {item['title']}",
+                  f"来源：{item['source']}",
+                  f"原文发布时间：{published:%Y-%m-%d %H:%M %Z}",
+                  f"🔗 官方原文：{item['url']}"]
+    lines += ["", "👀 后续关注：以官方后续公告及交易所正式行情为准。",
+              "===== 资讯助理 ====="]
+    return "\n".join(lines)
+
 
 def main():
-    # Only send at the beginning of each local hour. A later run in that hour can recover from scheduler delay.
-    state=json.loads(STATE.read_text())
-    items=fetch()
-    changed=False
-    for region,(flag,country,tz) in REGIONS.items():
-        local=NOW.astimezone(ZoneInfo(tz))
-        if local.minute>20: continue
-        bucket=local.strftime("%Y-%m-%d-%H")
-        key=f"{region}:{bucket}"
-        if key in state: continue
-        seen={k for values in state.values() for k in values}
-        chosen=[]
-        for item in items:
-            digest=hashlib.sha256(item["link"].encode()).hexdigest()
-            if region in item["regions"] and digest not in seen:
-                chosen.append((item,digest))
-            if len(chosen)==3:break
-        if not chosen:continue
-        lines=[f"===== 资讯助理 =====",f"{flag} {country}｜财经资讯快报",f"数据检索时间：{local:%Y-%m-%d %H:%M}"]
-        for item,_ in chosen:
-            published=item["published"].astimezone(ZoneInfo(tz))
-            lines.extend(["",f"📰 {item['title']}",f"来源：{item['source']}｜发布时间：{published:%Y-%m-%d %H:%M}",f"🔗 官方原文：{item['link']}"])
-        lines.append("\n===== 资讯助理 =====")
-        send("\n".join(lines))
-        state[key]=[digest for _,digest in chosen]
-        STATE.parent.mkdir(parents=True,exist_ok=True)
-        STATE.write_text(json.dumps(state,ensure_ascii=False,indent=2)+"\n")
-        changed=True
-    if changed: print("Sent verified-source headlines")
+    state = json.loads(STATE.read_text(encoding="utf-8"))
+    articles = parse_news()
+    updated = False
+    for region, market in MARKETS.items():
+        local = NOW.astimezone(ZoneInfo(market["zone"]))
+        slot = due_slot(local)
+        if slot is None:
+            continue
+        kind, suffix = slot
+        key = f"{region}:{suffix}"
+        if key in state:
+            continue
+        # De-duplicate within each country, not across countries.
+        already = {digest for k, ids in state.items() if k.startswith(region + ":") for digest in ids}
+        candidates = sorted((item for item in articles if region in item["regions"]),
+                            key=lambda item: rank(item, region), reverse=True)
+        selected = []
+        for item in candidates:
+            digest = hashlib.sha256(item["url"].encode("utf-8")).hexdigest()
+            if digest not in already and all(digest != other[1] for other in selected):
+                selected.append((item, digest))
+            if len(selected) == (6 if kind == "morning" else 3):
+                break
+        if not selected:
+            print(f"No verified new articles for {region} {suffix}")
+            continue
+        message = format_digest(region, kind, [item for item, _ in selected], local)
+        if telegram_send(message):
+            state[key] = [digest for _, digest in selected]
+            STATE.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            updated = True
+    if updated:
+        print("Delivery and deduplication state updated")
 
-if __name__=="__main__": main()
+
+if __name__ == "__main__":
+    main()
