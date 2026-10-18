@@ -13,6 +13,11 @@ from test_live_runner import ENV
 
 
 class TakeoverTests(unittest.TestCase):
+    def setUp(self):
+        translator = patch("live_runner.FreeTranslator", return_value=lambda text: text)
+        translator.start()
+        self.addCleanup(translator.stop)
+
     NOW = dt.datetime(2026, 10, 19, 4, 40, tzinfo=dt.timezone.utc)
 
     def test_french_official_atom_uses_update_timestamp_and_no_translation(self):

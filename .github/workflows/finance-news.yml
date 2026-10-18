@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RSS_CACHE_DIR: .rss-cache
+      TRANSLATION_CACHE_DIR: .translation-cache
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,6 +29,11 @@ jobs:
       - name: Dependency-free safety preflight
         run: python preflight.py
       - run: pip install -r requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: .translation-cache
+          key: free-translation-v1-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: free-translation-v1-${{ runner.os }}-
       - name: Run tests
         run: python -m unittest discover -s tests -v
       - name: Check RSS source health

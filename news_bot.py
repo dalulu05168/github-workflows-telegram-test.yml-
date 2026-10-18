@@ -13,6 +13,7 @@ import feedparser
 import requests
 from rss_cache import load_feed
 from editorial import editorial_context
+from free_translation import FreeTranslator, TranslationUnavailable
 from state_store import prune_sent_state, write_state_atomic
 
 BASE = Path(__file__).resolve().parent
@@ -245,7 +246,7 @@ def due_slot(local):
     return None
 
 
-def format_digest(region, kind, chosen, local):
+def format_digest(region, kind, chosen, local, translator=None):
     """Render the requested editorial template without inventing market impact."""
     market = MARKETS[region]
     heading = "晨间财经资讯｜昨夜美国及本国重点" if kind == "morning" else "财经资讯快报"
@@ -255,11 +256,22 @@ def format_digest(region, kind, chosen, local):
     for item in chosen:
         published = item["published"].astimezone(ZoneInfo(market["zone"]))
         summary = item.get("summary", "").strip()
+        title = item["title"]
         facts = ("官方原文摘要（未翻译）： " + summary) if summary else "官方来源仅提供标题，详细事实请查阅原文。"
+        if translator is not None:
+            try:
+                translated_title = translator(title)
+                translated_summary = translator(summary) if summary else ""
+                title = translated_title + "（机译）"
+                facts = ("官方摘要中文机译：" + translated_summary + "（以官方原文为准）"
+                         if summary else "官方来源仅提供标题，详细事实请查阅原文。")
+            except TranslationUnavailable:
+                title = "【免费翻译暂不可用｜官方原文】" + item["title"]
+                facts = "免费翻译暂不可用，保留官方原文：" + summary if summary else "官方来源仅提供标题，详细事实请查阅原文。"
         context = editorial_context(item, region)
         impact = context["impact"]
         lines += ["", ("🔴" if context["major"] else "🔵") + " " + market["flag"] + " " + market["name"] + "｜财经资讯快报",
-                  "【新闻标题】", item["title"],
+                  "【新闻标题】", title,
                   "", "📰 发生了什么", facts,
                   f"来源：{item['source']}｜{item.get('time_label', '发布时间')}：{published:%Y-%m-%d %H:%M %Z}",
                   "", f"{market['flag']} 对{market['name']}市场的影响", impact,
@@ -280,6 +292,7 @@ def preview_slot(local, preview_all=False, dry_run=True):
 def main():
     state = prune_sent_state(json.loads(STATE.read_text(encoding="utf-8")), NOW)
     articles = parse_news()
+    translator = FreeTranslator()
     updated = False
     for region, market in MARKETS.items():
         local = NOW.astimezone(ZoneInfo(market["zone"]))
@@ -300,7 +313,7 @@ def main():
         if not selected:
             print(f"No verified new articles for {region} {suffix}")
             continue
-        message = format_digest(region, kind, [item for item, _ in selected], local)
+        message = format_digest(region, kind, [item for item, _ in selected], local, translator=translator)
         if telegram_send(message):
             state[key] = [digest for _, digest in selected]
             write_state_atomic(STATE, state)

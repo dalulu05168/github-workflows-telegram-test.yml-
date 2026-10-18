@@ -13,6 +13,8 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      TRANSLATION_CACHE_DIR: .translation-cache
     permissions:
       contents: write
     steps:
@@ -25,11 +27,16 @@ jobs:
           python-version: '3.11'
       - name: Install dependencies
         run: python -m pip install -r requirements.txt
+      - uses: actions/cache@v4
+        with:
+          path: .translation-cache
+          key: free-translation-v1-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: free-translation-v1-${{ runner.os }}-
       - name: Validate preview configuration and run regression tests
         run: |
           python preflight.py
           python -m unittest discover -s tests -v
-      - name: Deliver eligible original-language news with persistent ledger
+      - name: Deliver eligible Chinese-translated news with persistent ledger
         env:
           DRY_RUN: 'false'
           LIVE_APPROVED: 'true'

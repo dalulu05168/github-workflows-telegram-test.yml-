@@ -6,6 +6,7 @@ Review/approval and a protected scheduled workflow are required before use.
 """
 import os
 from zoneinfo import ZoneInfo
+from free_translation import FreeTranslator
 
 from delivery_ledger import (
     DeliveryUncertain, GitHubLedger, LedgerConflict, send_telegram_part,
@@ -49,6 +50,7 @@ def run_live(environment=None, now=None, articles=None,
         lambda text: send_telegram_part(bot_token, chat_id, text))
     any_sent = False
     blocked = []
+    translator = FreeTranslator()
     for region, market in MARKETS.items():
         local = now.astimezone(ZoneInfo(market["zone"]))
         slot = due_slot(local)
@@ -78,7 +80,7 @@ def run_live(environment=None, now=None, articles=None,
         if not selected:
             print(f"No eligible articles for {region} {suffix}; no send.")
             continue
-        message = format_digest(region, kind, [item for item, _ in selected], local)
+        message = format_digest(region, kind, [item for item, _ in selected], local, translator=translator)
         chunks = split_telegram_message(message)
         article_ids = [digest for _, digest in selected]
         # Must persist before calling Telegram, including for multipart digests.

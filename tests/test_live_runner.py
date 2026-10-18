@@ -15,6 +15,11 @@ ENV = {"DRY_RUN": "false", "LIVE_APPROVED": "true",
 
 
 class LiveRunnerTests(unittest.TestCase):
+    def setUp(self):
+        translator = patch("live_runner.FreeTranslator", return_value=lambda text: text)
+        translator.start()
+        self.addCleanup(translator.stop)
+
     def test_without_approval_is_inert(self):
         for env in ({}, {"DRY_RUN": "false"}, {"LIVE_APPROVED": "true"}):
             with patch("live_runner.GitHubLedger") as ledger:
