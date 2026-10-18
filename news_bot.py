@@ -104,25 +104,52 @@ def rank(article, region):
             + article["published"].timestamp() / 1e10)
 
 
+def split_telegram_message(message, limit=4000):
+    """Split on line boundaries while preserving all content and message order."""
+    if limit < 100:
+        raise ValueError("Message limit is too small")
+    if len(message) <= limit:
+        return [message]
+    chunks = []
+    current = ""
+    for line in message.splitlines(keepends=True):
+        if len(line) > limit:
+            if current:
+                chunks.append(current)
+                current = ""
+            while len(line) > limit:
+                chunks.append(line[:limit])
+                line = line[limit:]
+        if len(current) + len(line) > limit:
+            if current:
+                chunks.append(current)
+            current = ""
+        current += line
+    if current:
+        chunks.append(current)
+    return chunks
+
+
 def telegram_send(message):
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     chat = os.getenv("TELEGRAM_CHAT_ID")
+    chunks = split_telegram_message(message)
     if os.getenv("DRY_RUN", "true").lower() != "false":
-        print("DRY_RUN enabled; preview:\n" + message)
+        for i, chunk in enumerate(chunks, 1):
+            print(f"DRY_RUN enabled; preview part {i}/{len(chunks)}:\\n" + chunk)
         return False
     if not token or not chat:
         print("Telegram secrets absent; skipping delivery")
         return False
-    if len(message) > 4000:
-        raise ValueError("Telegram message exceeds safe text length; shorten digest before sending")
-    resp = requests.post(
-        f"https://api.telegram.org/bot{token}/sendMessage",
-        json={"chat_id": chat, "text": message, "disable_web_page_preview": True},
-        timeout=25,
-    )
-    resp.raise_for_status()
-    if not resp.json().get("ok"):
-        raise RuntimeError("Telegram API returned not ok")
+    for chunk in chunks:
+        resp = requests.post(
+            f"https://api.telegram.org/bot{token}/sendMessage",
+            json={"chat_id": chat, "text": chunk, "disable_web_page_preview": True},
+            timeout=25,
+        )
+        resp.raise_for_status()
+        if not resp.json().get("ok"):
+            raise RuntimeError("Telegram API returned not ok")
     return True
 
 
