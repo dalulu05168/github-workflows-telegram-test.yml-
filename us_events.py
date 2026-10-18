@@ -17,7 +17,7 @@ US_ANCHORS = ("u.s.", "united states", "wall street", "s&p 500", "s&p500",
               "unitedhealth", "pfizer")
 US_COMPANIES = ("apple", "meta", "oracle", "pepsi", "costco", "rivian", "lucid")
 FINANCE_TERMS = ("shares", "stock", "earnings", "revenue", "profit", "guidance", "chip")
-OPINION = ("prediction:", "should you buy", "stocks to buy", "better investment",
+OPINION = ("chilling outlook", "we just witnessed", "is a reminder", "prediction:", "should you buy", "stocks to buy", "better investment",
            "which stock", "which ev stock", "vs.", "could be worth", "how to invest",
            "should you", "could make", "price targets", "what history says",
            "key takeaways", "week ahead", "what to watch", "could fall", "could rise",

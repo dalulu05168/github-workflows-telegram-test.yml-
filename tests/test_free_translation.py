@@ -91,8 +91,9 @@ class FreeTranslationTests(unittest.TestCase):
                 "published": now, "source": "Official", "url": "https://www.ecb.europa.eu/news"}
         translated = {"Inflation": "通胀", "Consumer prices rose.": "消费者价格上涨。"}
         message = format_digest("FR", "hourly", [item], now, translator=translated.__getitem__)
-        self.assertIn("通胀（机译）", message)
-        self.assertIn("官方摘要中文机译：消费者价格上涨。", message)
+        self.assertIn("1. 通胀", message)
+        self.assertIn("正文为来源内容的中文翻译", message)
+        self.assertIn("消费者价格上涨。", message)
         self.assertIn(item["url"], message)
         self.assertIn("若数据超出预期", message)  # Topic detection still uses source text.
 
@@ -103,7 +104,7 @@ class FreeTranslationTests(unittest.TestCase):
         def failed(_):
             raise TranslationUnavailable("quota")
         message = format_digest("FR", "hourly", [item], now, translator=failed)
-        self.assertIn("免费翻译暂不可用", message)
+        self.assertIn("中文翻译暂不可用", message)
         self.assertIn("Original", message)
         self.assertIn("Source facts", message)
         self.assertIn(item["url"], message)

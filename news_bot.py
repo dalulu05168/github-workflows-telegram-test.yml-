@@ -12,6 +12,7 @@ from urllib.parse import urlparse, urljoin, parse_qsl, urlencode, urlunparse
 import feedparser
 import requests
 from rss_cache import load_feed
+from publisher_filter import relevant
 from editorial import editorial_context
 from free_translation import FreeTranslator, TranslationUnavailable
 from us_events import us_event_context, is_us_equity_event
@@ -45,7 +46,7 @@ def official_url(article_url, feed_url):
         root = publishers[feed_url]
         return host == root or host.endswith("." + root)
     # Hostnames may differ within the same official organization.
-    roots = ("federalreserve.gov", "ecb.europa.eu", "bls.gov", "insee.fr", "bvb.ro", "bnr.ro", "nasdaq.com", "sec.gov")
+    roots = ("federalreserve.gov", "ecb.europa.eu", "bls.gov", "insee.fr", "bvb.ro", "bnr.ro", "nasdaq.com", "sec.gov", "economica.net", "romania-insider.com", "cnbc.com")
     # INSEE statistics RSS is served on bdm.insee.fr; article links may be on insee.fr.
     for root in roots:
         if (feed_host == root or feed_host.endswith("." + root)):
@@ -54,7 +55,7 @@ def official_url(article_url, feed_url):
 
 
 LOCAL_DOMAINS = {
-    "RO": ("bvb.ro", "bnr.ro", "insse.ro"),
+    "RO": ("bvb.ro", "bnr.ro", "insse.ro", "economica.net", "romania-insider.com"),
     "FR": ("insee.fr", "euronext.com", "tresor.economie.gouv.fr"),
 }
 
@@ -99,7 +100,7 @@ def select_articles(articles, region, already, kind, now):
     local = now.astimezone(ZoneInfo(MARKETS[region]["zone"]))
     max_hours = (72 if local.weekday() == 0 else 18) if kind == "morning" else 6
     candidates = sorted(
-        (item for item in articles if region in item["regions"]
+        (item for item in articles if relevant(item) and region in item["regions"]
          and 0 <= (now - item["published"]).total_seconds() <= max_hours * 3600
          and (item.get("coverage") != "us_market" or us_event_context(item, region))),
         key=lambda item: rank(item, region), reverse=True,
@@ -128,7 +129,7 @@ def parse_news(diagnostics=None):
     results = []
     for source in SOURCES:
         counts = {"source": source["name"], "entries": 0, "accepted": 0,
-                  "missing_date": 0, "outside_96h": 0,
+                  "missing_date": 0, "outside_96h": 0, "regions": source["regions"],
                   "invalid_official_link_or_title": 0, "error": None}
         if diagnostics is not None:
             diagnostics.append(counts)
@@ -167,10 +168,11 @@ def parse_news(diagnostics=None):
                     "market": source.get("market"), "asset_class": source.get("asset_class"),
                     "coverage": source.get("coverage"),
                     "source_kind": source.get("source_kind", "institutional"),
+                    "financial_news_only": source.get("financial_news_only", False),
                     "author": re.sub(r"<[^>]*>", "", html.unescape(entry.get("author", "")))[:120],
                 })
         except (requests.RequestException, ValueError) as exc:
-            counts["error"] = str(exc)[:150]
+            counts["error"] = type(exc).__name__ + ": " + str(exc)[:130]
             print(f"Unavailable feed {source['name']}: {exc}")
     return results
 
@@ -270,50 +272,34 @@ def due_slot(local):
 
 
 def format_digest(region, kind, chosen, local, translator=None):
-    """Render the requested editorial template without inventing market impact."""
+    """Human-readable source facts, conditional impact and watch points."""
     market = MARKETS[region]
-    heading = "晨间财经资讯｜昨夜美国及本国重点" if kind == "morning" else "财经资讯快报"
-    lines = ["===== 资讯助理 =====",
-             f"{market['flag']} {market['name']}｜{heading}",
-             f"🕒 编制时间：{local:%Y-%m-%d %H:%M %Z}"]
-    if any(is_us_equity_event(item) for item in chosen):
-        lines.append("🇺🇸 本期含美股事件，并分别分析对本地市场的可能传导。")
-    elif any(us_event_context(item, region) for item in chosen):
-        lines.append("🇺🇸 本期含美国宏观信息，暂无符合时效与去重条件的美股事件。")
-    else:
-        lines.append("🇺🇸 本期暂无符合时效与去重条件的美国市场新事件，不重复旧闻。")
-    for item in chosen:
+    period = "早间资讯" if kind == "morning" else ("午间资讯" if local.hour < 18 else "晚间资讯")
+    country_time = market["name"] + "时间"
+    lines = ["===== 资讯助理 =====", f"{market['flag']} {market['name']}｜{period}",
+             f"{country_time} {local:%m月%d日 %H:%M}"]
+    for number,item in enumerate(chosen,1):
         published = item["published"].astimezone(ZoneInfo(market["zone"]))
-        summary = item.get("summary", "").strip()
-        title = item["title"]
-        origin = "来源" if item.get("source_kind") == "publisher" else "官方"
-        facts = (origin + "原文摘要（未翻译）： " + summary) if summary else "来源仅提供标题，详细事实请查阅原文。"
+        title, summary = item["title"], item.get("summary", "").strip()
+        translation_note = ""
         if translator is not None:
             try:
-                translated_title = translator(title)
-                translated_summary = translator(summary) if summary else ""
-                title = translated_title + "（机译）"
-                facts = (origin + "摘要中文机译：" + translated_summary + "（以来源原文为准）"
-                         if summary else "来源仅提供标题，详细事实请查阅原文。")
+                title = translator(title)
+                summary = translator(summary) if summary else ""
+                translation_note = "；正文为来源内容的中文翻译"
             except TranslationUnavailable:
-                title = "【免费翻译暂不可用｜" + origin + "原文】" + item["title"]
-                facts = "免费翻译暂不可用，保留" + origin + "原文：" + summary if summary else "来源仅提供标题，详细事实请查阅原文。"
+                title,summary = item["title"],item.get("summary","").strip()
+                translation_note = "；中文翻译暂不可用，以下保留来源原文"
         context = editorial_context(item, region)
-        impact = context["impact"]
         attribution = ("｜作者/供稿：" + item["author"]) if item.get("author") else ""
-        lines += ["", ("🔴" if context["major"] else "🔵") + " " + market["flag"] + " " + market["name"] + "｜财经资讯快报",
-                  "【新闻标题】", title]
-        if context.get("us_event"):
-            lines += ["", "🇺🇸 美国市场事件：" + "、".join(context["event_types"][:2]),
-                      "识别依据（原文关键词）：" + "、".join(context["evidence"]),
-                      "分析性质：" + context["analysis_status"]]
-        lines += ["", "📰 发生了什么", facts,
-                  f"来源：{item['source']}{attribution}｜{item.get('time_label', '发布时间')}：{published:%Y-%m-%d %H:%M %Z}",
-                  "", f"{market['flag']} 对{market['name']}市场的影响", impact,
-                  "", "👀 后续关注", context["watch"],
-                  "", f"🔗 {origin}原文：{item['url']}"]
-        # No image link unless a separately verified official image is available.
-    lines += ["", "===== 资讯助理 ====="]
+        lines += ["", f"{number}. {title}", "",
+                  summary or "来源目前只提供标题，详细内容仍需查阅原文。",
+                  "", "可能影响：" + context["impact"],
+                  "", "值得关注：" + context["watch"],
+                  "", f"来源：{item['source']}{attribution}｜{item.get('time_label','发布时间')}：{published:%m月%d日 %H:%M}（{country_time}）" + translation_note,
+                  "原文：" + item["url"]]
+    if not chosen:
+        lines += ["", "本时段暂无符合时效与去重要求的新消息。"]
     return "\n".join(lines)
 
 def preview_slot(local, preview_all=False, dry_run=True):

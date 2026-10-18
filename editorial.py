@@ -39,11 +39,15 @@ def editorial_context(article, region):
     us_context = us_event_context(article, region)
     if us_context:
         return dict(us_context, major=is_major(article))
+    if region == "RO" and any(term in content for term in ("capitalizare", "bucharest stock exchange", "bursa de la bucure")):
+        return {"topic": "ro_market", "major": False,
+                "impact": "这类报道可以帮助观察本地市场的整体变化，但总市值增加不等于同等金额的新资金流入，也不代表每只股票都上涨。",
+                "watch": "结合 BET 权重股、上涨股票数量和成交额核对上涨是否扩散；周度变化与今天盘中表现要分开看。"}
     for topic, keywords, impact, watch in TOPICS:
         if any(re.search(r"(?<!\w)" + re.escape(word) + r"(?!\w)", content) for word in keywords):
             return {"topic": topic, "major": is_major(article), "impact": impact[region], "watch": watch}
     return {
         "topic": "other", "major": is_major(article),
-        "impact": "暂无法从官方摘要确认对本地市场的具体传导渠道，不作方向性判断。",
+        "impact": "现有信息还不足以判断对本地市场的具体影响，先保留观察。",
         "watch": "关注发布机构的完整公告、相关经济指标及交易所正式数据。",
     }

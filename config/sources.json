@@ -106,5 +106,39 @@
     "asset_class": "equities",
     "coverage": "us_market",
     "source_kind": "institutional"
+  },
+  {
+    "name": "Economica 财经报道",
+    "url": "https://www.economica.net/feed",
+    "regions": [
+      "RO"
+    ],
+    "weight": 4,
+    "source_kind": "publisher",
+    "financial_news_only": true
+  },
+  {
+    "name": "Romania Insider 商业报道",
+    "url": "https://www.romania-insider.com/feed",
+    "regions": [
+      "RO"
+    ],
+    "weight": 3,
+    "source_kind": "publisher",
+    "financial_news_only": true
+  },
+  {
+    "name": "CNBC 财经报道",
+    "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+    "regions": [
+      "RO",
+      "FR"
+    ],
+    "weight": 4,
+    "market": "GLOBAL",
+    "asset_class": "equities",
+    "coverage": "us_market",
+    "source_kind": "publisher",
+    "financial_news_only": true
   }
 ]

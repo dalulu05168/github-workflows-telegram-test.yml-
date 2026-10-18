@@ -51,7 +51,9 @@ class USEventTests(unittest.TestCase):
     def test_stock_comparisons_and_forecasts_do_not_fill_event_slot(self):
         titles = ["Nvidia vs. Microsoft: better investment?", "Prediction: Oracle stock beats S&P 500",
                   "Should you buy Nvidia stock?", "How Nvidia Could Make Investors Rich",
-                  "S&P 500: What to watch in the week ahead"]
+                  "S&P 500: What to watch in the week ahead",
+                  "We just witnessed a stock market measure with a chilling outlook for Wall Street",
+                  "The AI Stock Market Wobble Is a Reminder: This Time Is Different"]
         for title in titles:
             self.assertIsNone(us_event_context(article(title, "opinion"), "FR"))
 
@@ -122,13 +124,13 @@ class USEventTests(unittest.TestCase):
     def test_message_preserves_country_analysis_translation_and_media_attribution(self):
         item = article("Nvidia reports quarterly earnings", "earnings", author="Original provider")
         text = format_digest("FR", "hourly", [item], NOW, translator=lambda _: "中文译文")
-        self.assertIn("🇺🇸 本期含美股事件", text)
-        self.assertIn("美国市场事件：", text)
-        self.assertIn("识别依据（原文关键词）", text)
+        self.assertIn("美国公司业绩可能", text)
+        self.assertIn("可能影响：", text)
+        self.assertNotIn("识别依据（原文关键词）", text)
         self.assertIn("CAC 40", text)
-        self.assertIn("中文译文（机译）", text)
+        self.assertIn("中文译文", text)
         self.assertIn("作者/供稿：Original provider", text)
-        self.assertIn("来源原文：", text)
+        self.assertIn("原文：https://", text)
         self.assertNotIn("官方原文：", text)
         self.assertNotIn("CAC 40上涨", text)
 

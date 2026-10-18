@@ -105,8 +105,11 @@ def run_live(environment=None, now=None, articles=None,
         already = ledger.claimed_articles(region)
         selected = select_articles(articles, region, already, kind, now)
         if not selected:
-            market_report["status"] = "NO_ELIGIBLE_NEWS"
-            print(f"No eligible articles for {region} {suffix}; no send.")
+            failed_sources = [x["source"] for x in report["source_diagnostics"]
+                              if x.get("error") and region in x.get("regions", [region])]
+            market_report["status"] = "NO_NEWS_WITH_SOURCE_FAILURES" if failed_sources else "NO_ELIGIBLE_NEWS"
+            market_report["failed_sources"] = failed_sources
+            print(f"{region} {suffix}: {market_report['status']}; no send.")
             continue
         message = format_digest(region, kind, [item for item, _ in selected], local, translator=translator)
         chunks = split_telegram_message(message)
