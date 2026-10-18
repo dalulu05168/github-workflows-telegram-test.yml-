@@ -1,6 +1,6 @@
 import datetime as dt
 import unittest
-from news_coverage import report, source_audit
+from news_coverage import report, source_audit, markdown_summary
 
 class CoverageTests(unittest.TestCase):
     def test_missing_local_sources_are_disclosed(self):
@@ -23,6 +23,18 @@ class CoverageTests(unittest.TestCase):
                       "invalid_official_link_or_title":0,"error":None}]
         result=report([],now,diagnostics)
         self.assertEqual(result["feed_diagnostics"][0]["outside_96h"],14)
+
+    def test_actions_summary_shows_both_countries_and_source_errors(self):
+        now = dt.datetime(2026, 10, 19, 5, tzinfo=dt.timezone.utc)
+        diag = [{"source": "US BLS", "entries": 0, "accepted": 0,
+                 "outside_96h": 0, "invalid_official_link_or_title": 0,
+                 "error": "404 Not Found"}]
+        summary = markdown_summary(report([], now, diag))
+        self.assertIn("| RO |", summary)
+        self.assertIn("| FR |", summary)
+        self.assertIn("72h", summary)
+        self.assertIn("404 Not Found", summary)
+        self.assertIn("DRY RUN", summary)
 
     def test_empty_sources_are_reported(self):
         now=dt.datetime(2026,10,18,12,tzinfo=dt.timezone.utc)
