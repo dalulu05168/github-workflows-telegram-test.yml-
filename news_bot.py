@@ -62,32 +62,44 @@ def select_articles(articles, region, already, kind, now):
     return selected
 
 
-def parse_news():
+def parse_news(diagnostics=None):
     results = []
     for source in SOURCES:
+        counts = {"source": source["name"], "entries": 0, "accepted": 0,
+                  "missing_date": 0, "outside_96h": 0,
+                  "invalid_official_link_or_title": 0, "error": None}
+        if diagnostics is not None:
+            diagnostics.append(counts)
         try:
             response = requests.get(source["url"], headers=HEADERS, timeout=20)
             response.raise_for_status()
-            for entry in feedparser.parse(response.content).entries:
+            entries = feedparser.parse(response.content).entries
+            counts["entries"] = len(entries)
+            for entry in entries:
                 published = entry.get("published_parsed") or entry.get("updated_parsed")
                 if not published:
+                    counts["missing_date"] += 1
                     continue
                 published_at = dt.datetime.fromtimestamp(calendar.timegm(published), dt.timezone.utc)
                 age = (NOW - published_at).total_seconds()
                 if not 0 <= age <= WINDOW_HOURS * 3600:
+                    counts["outside_96h"] += 1
                     continue
                 url = entry.get("link", "")
                 title = re.sub(r"<[^>]*>", "", html.unescape(entry.get("title", ""))).strip()
                 if not official_url(url, source["url"]) or not title:
+                    counts["invalid_official_link_or_title"] += 1
                     continue
                 summary = re.sub(r"<[^>]*>", " ", html.unescape(entry.get("summary", "")))
                 summary = " ".join(summary.split())[:450]
+                counts["accepted"] += 1
                 results.append({
                     "title": title, "url": url, "summary": summary,
                     "published": published_at, "source": source["name"],
                     "regions": source["regions"], "weight": source["weight"],
                 })
         except (requests.RequestException, ValueError) as exc:
+            counts["error"] = str(exc)[:150]
             print(f"Unavailable feed {source['name']}: {exc}")
     return results
 
