@@ -10,7 +10,7 @@ import requests
 import feedparser
 import re
 from collections import Counter
-from news_bot import SOURCES, NOW, WINDOW_HOURS, official_url
+from news_bot import SOURCES, NOW, WINDOW_HOURS, official_url, resolve_official_link
 
 
 def inspect_source(source, fetch=requests.get, now=None):
@@ -19,7 +19,7 @@ def inspect_source(source, fetch=requests.get, now=None):
               "older_than_fetch_window": 0, "invalid_official_link": 0,
               "missing_title": 0, "eligible_6h": 0, "eligible_18h": 0,
               "eligible_72h": 0, "eligible_fetch_window": 0,
-              "rejected_link_origins": {}}
+              "rejected_link_origins": {}, "rejected_link_samples": []}
     result = {"source": source["name"], "regions": source["regions"], "counts": counts}
     missing_link_fields = Counter()
     embedded_link_origins = Counter()
@@ -41,9 +41,13 @@ def inspect_source(source, fetch=requests.get, now=None):
             if age > WINDOW_HOURS:
                 counts["older_than_fetch_window"] += 1
                 continue
-            if not official_url(entry.get("link", ""), source["url"]):
+            link_value = entry.get("link", "")
+            resolved = resolve_official_link(link_value, source["url"])
+            if not resolved or not official_url(resolved, source["url"]):
                 counts["invalid_official_link"] += 1
-                link = urlparse(entry.get("link", ""))
+                link = urlparse(link_value)
+                if len(counts["rejected_link_samples"]) < 3:
+                    counts["rejected_link_samples"].append(str(link_value)[:110])
                 origin = f"{link.scheme or '(none)'}://{link.hostname or '(no host)'}"
                 counts["rejected_link_origins"][origin] = counts["rejected_link_origins"].get(origin, 0) + 1
                 if not entry.get("link"):
