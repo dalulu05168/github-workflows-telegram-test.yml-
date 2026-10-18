@@ -1,5 +1,7 @@
 """Inspect RSS feeds without delivering Telegram messages."""
 import json
+import calendar
+import datetime as dt
 from pathlib import Path
 import feedparser
 import requests
@@ -18,7 +20,16 @@ def check_source(source, fetch=requests.get):
         recent_dates = sum(bool(e.get("published_parsed") or e.get("updated_parsed")) for e in feed.entries)
         if not recent_dates:
             return {"source": source["name"], "ok": False, "reason": "entries have no publication dates"}
-        return {"source": source["name"], "ok": True, "entries": len(feed.entries), "dated": recent_dates}
+        dates = [dt.datetime.fromtimestamp(calendar.timegm(date), dt.timezone.utc)
+                 for entry in feed.entries
+                 if (date := (entry.get("published_parsed") or entry.get("updated_parsed")))]
+        newest = max(dates)
+        age_hours = round((dt.datetime.now(dt.timezone.utc) - newest).total_seconds() / 3600, 1)
+        return {"source": source["name"], "ok": True, "entries": len(feed.entries),
+                "dated": recent_dates, "newest_utc": newest.isoformat(),
+                "newest_age_hours": age_hours,
+                "fresh_within_72h": 0 <= age_hours <= 72}
+
     except (requests.RequestException, ValueError) as exc:
         return {"source": source["name"], "ok": False, "reason": str(exc)[:150]}
 
