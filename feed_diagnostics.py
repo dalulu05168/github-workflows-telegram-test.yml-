@@ -8,6 +8,8 @@ import json
 from urllib.parse import urlparse
 import requests
 import feedparser
+import re
+from collections import Counter
 from news_bot import SOURCES, NOW, WINDOW_HOURS, official_url
 
 
@@ -19,6 +21,8 @@ def inspect_source(source, fetch=requests.get, now=None):
               "eligible_72h": 0, "eligible_fetch_window": 0,
               "rejected_link_origins": {}}
     result = {"source": source["name"], "regions": source["regions"], "counts": counts}
+    missing_link_fields = Counter()
+    embedded_link_origins = Counter()
     try:
         response = fetch(source["url"], headers={"User-Agent": "FinanceNewsBot/0.3"}, timeout=20)
         response.raise_for_status()
@@ -42,6 +46,12 @@ def inspect_source(source, fetch=requests.get, now=None):
                 link = urlparse(entry.get("link", ""))
                 origin = f"{link.scheme or '(none)'}://{link.hostname or '(no host)'}"
                 counts["rejected_link_origins"][origin] = counts["rejected_link_origins"].get(origin, 0) + 1
+                if not entry.get("link"):
+                    missing_link_fields.update(entry.keys())
+                    raw = str(entry.get("summary", ""))
+                    for url in re.findall(r"https?://[^\\s\"\'<>]+", raw)[:4]:
+                        candidate = urlparse(url)
+                        embedded_link_origins[f"{candidate.scheme}://{candidate.hostname or '(no host)'}"] += 1
                 continue
             if not entry.get("title", "").strip():
                 counts["missing_title"] += 1
@@ -50,6 +60,9 @@ def inspect_source(source, fetch=requests.get, now=None):
             for hours in (6, 18, 72):
                 if age <= hours:
                     counts[f"eligible_{hours}h"] += 1
+        if missing_link_fields:
+            result["missing_link_entry_field_counts"] = dict(missing_link_fields)
+            result["summary_link_origins"] = dict(embedded_link_origins)
         result["ok"] = True
     except (requests.RequestException, ValueError) as exc:
         result["ok"] = False
