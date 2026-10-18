@@ -41,21 +41,31 @@ class CountryRoutingTests(unittest.TestCase):
    text=format_digest(region,'hourly',[a],NOW)
    self.assertIn('美股相关消息：本期包含',text)
    self.assertIn('🇺🇸',text)
+   self.assertIn('重点观察范围：',text)
+   self.assertIn(('罗马尼亚' if region=='RO' else '法国')+'金融与股票市场的可能影响：',text)
 
  def test_weekend_market_analysis_is_not_counted_as_an_observed_event(self):
   a={'title':'There is a silent market rotation inside the S&P 500 warning of more weakness ahead','summary':'A triple-top reversal pattern points to underperformance for the S&P 500.','published':NOW,'source':'MarketWatch','financial_news_only':True,'source_url':'https://feeds.content.dowjones.io/public/rss/mw_topstories','url':'https://www.marketwatch.com/story/test','regions':['RO','FR'],'weight':4,'market':'GLOBAL','coverage':'us_market','asset_class':'equities'}
   self.assertTrue(is_us_market_commentary(a))
   self.assertIsNone(us_event_context(a,'RO'))
   self.assertFalse(is_us_equity_event(a))
-  self.assertEqual(len(select_articles([a],'FR',set(),'hourly',NOW)),1)
-  self.assertIn('媒体市场观察',format_digest('FR','hourly',[a],NOW))
-  broadcast=format_digest('RO','hourly',[a],NOW,display_market='US')
-  self.assertIn('对罗马尼亚的可能影响：',broadcast)
-  self.assertIn('对法国的可能影响：',broadcast)
+  self.assertEqual(select_articles([a],'FR',set(),'hourly',NOW),[])
+  with self.assertRaises(ValueError):format_digest('FR','hourly',[a],NOW)
   a['published']=NOW-dt.timedelta(hours=7)
   self.assertEqual(select_articles([a],'FR',set(),'hourly',NOW),[])
  def test_promotional_forecast_is_not_accepted_as_market_analysis(self):
   a={'title':'Prediction: Should you buy this S&P 500 stock for a millionaire future?','source_url':'https://feeds.content.dowjones.io/public/rss/mw_topstories'}
   self.assertFalse(is_us_market_commentary(a))
+
+ def test_only_two_country_bundles_and_no_standalone_us_proof(self):
+  from send_news_proof import run
+  from unittest.mock import Mock
+  sender=Mock()
+  env={'NEWS_PROOF_CONFIRM':'SEND_ONE_NEWS','NEWS_PROOF_SCOPE':'US','TELEGRAM_BOT_TOKEN':'fake','TELEGRAM_CHAT_ID':'fake'}
+  with self.assertRaises(RuntimeError):run(env,[],NOW,sender)
+  sender.assert_not_called()
+  for region,country in [('RO','罗马尼亚'),('FR','法国')]:
+   text=format_digest(region,'hourly',[],NOW)
+   self.assertIn(country+'＋🇺🇸 美国相关事件',text)
 
 if __name__=='__main__':unittest.main()

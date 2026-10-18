@@ -98,10 +98,27 @@ def us_event_context(article, region):
         return None
     rule, evidence = found[0]
     topic, label, _, ro, fr, watch = rule
+    assets_by_topic = {
+        "monetary": {"RO": "RON、罗马尼亚债券收益率与本地银行融资条件。", "FR": "EUR/USD、法国国债收益率及 CAC 40 的利率敏感板块。"},
+        "inflation": {"RO": "本地利率预期、RON，以及银行和消费相关板块。", "FR": "EUR/USD、法国国债及法国消费和利率敏感板块。"},
+        "employment": {"RO": "美元融资条件、RON 与 BET 的风险偏好。", "FR": "EUR/USD、法国出口企业及利率敏感板块。"},
+        "growth": {"RO": "罗马尼亚出口制造业和欧盟供应链中的实际订单。", "FR": "法国企业的美国收入、工业和奢侈品需求。"},
+        "trade": {"RO": "罗马尼亚出口制造业、汽车零部件及欧盟供应链。", "FR": "法国汽车、航空和奢侈品出口企业；按政策覆盖产品核对。"},
+        "earnings": {"RO": "与该美国公司有已披露客户、供应链或同业关联的罗马尼亚企业；无证据不点名个股。", "FR": "与该美国公司有实际竞争、客户或供应链关系的法国上市公司。"},
+        "technology": {"RO": "BET 整体风险偏好；直接业务影响须有罗马尼亚公司的披露证明。", "FR": "法国半导体、软件和工业 IT 投资相关企业；按公司披露核对业务关联。"},
+        "energy": {"RO": "SNP、SNG 的生产端敞口，以及本地用能企业的成本；方向可能不同。", "FR": "TotalEnergies，以及航空运输和工业用能企业的成本与盈利敞口。"},
+        "banking": {"RO": "本地银行板块、RON 和美元融资条件；实际损失须查敞口。", "FR": "法国银行的美元融资、交易对手和资本披露。"},
+        "regulation": {"RO": "涉及美国市场的罗马尼亚发行人、投资者及跨境金融服务。", "FR": "法国公司的美国上市和跨境金融机构业务。"},
+        "equities": {"RO": "BET 权重股、上涨家数与成交量，并核对 RON 和当地消息。", "FR": "CAC 40 板块、上涨家数与成交量，并核对 EUR/USD 和法国公司消息。"},
+    }
+    watch = watch.replace("法国或罗马尼亚", "罗马尼亚" if region=="RO" else "法国")
+    if topic == "monetary":
+        watch = ("核对美联储决议及预期差，再看美债收益率、USD/RON、BNR 立场和本地银行披露。" if region=="RO" else "核对美联储决议及预期差，再看美债收益率、EUR/USD、法国国债及 ECB 政策差异。")
     return {"topic": "us_" + topic, "us_event": True, "event_label": label,
             "event_types": [entry[0][1] for entry in found],
             "evidence": list(dict.fromkeys(term for _, terms in found for term in terms))[:4],
             "impact": ro if region == "RO" else fr, "watch": watch,
+            "assets": assets_by_topic[topic][region],
             "analysis_status": "条件性传导分析，尚未验证实际行情因果"}
 
 

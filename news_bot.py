@@ -106,7 +106,7 @@ def select_articles(articles, region, already, kind, now):
     candidates = sorted(
         (item for item in articles if relevant(item) and region in item["regions"]
          and 0 <= (now - item["published"]).total_seconds() <= max_hours * 3600
-         and (item.get("coverage") != "us_market" or us_event_context(item, region) or is_us_market_commentary(item))),
+         and (item.get("coverage") != "us_market" or us_event_context(item, region))),
         key=lambda item: rank(item, region), reverse=True,
     )
     eligible = []
@@ -120,8 +120,6 @@ def select_articles(articles, region, already, kind, now):
     us = next((entry for entry in eligible if is_us_equity_event(entry[0])), None)
     if us is None:
         us = next((entry for entry in eligible if us_event_context(entry[0], region)), None)
-    if us is None:
-        us = next((entry for entry in eligible if is_us_market_commentary(entry[0])), None)
     selected = []
     for entry in [local, us] + eligible:
         if entry and all(entry[1] != other[1] for other in selected):
@@ -277,22 +275,20 @@ def due_slot(local):
     return None
 
 
-def format_digest(region, kind, chosen, local, translator=None, display_market=None):
+def format_digest(region, kind, chosen, local, translator=None):
     """Human-readable source facts, conditional impact and watch points."""
     market = MARKETS[region]
     period = "早间资讯" if kind == "morning" else ("午间资讯" if local.hour < 18 else "晚间资讯")
     country_time = market["name"] + "时间"
-    lines = ["===== 资讯助理 =====", f"{market['flag']} {market['name']}｜{period}",
+    lines = ["===== 资讯助理 =====", f"{market['flag']} {market['name']}＋🇺🇸 美国相关事件｜{period}",
              f"{country_time} {local:%m月%d日 %H:%M}"]
-    if display_market == "US":
-        lines[1] = "🇺🇸 美股相关资讯｜" + ("媒体市场观察" if all(is_us_market_commentary(x) for x in chosen) else "市场与公司消息")
     if any(us_event_context(item,region) for item in chosen):
         lines.append("美股相关消息：本期包含已识别的公司或市场事件，发布时间见各条来源。")
-    elif any(is_us_market_commentary(item) for item in chosen):
-        lines.append("美股相关消息：本期包含媒体市场观察，非实时行情或已证实的走势预测。")
     else:
         lines.append("美股相关消息：本期暂无符合时效与去重要求的新事件。")
     for number,item in enumerate(chosen,1):
+        if is_us_market_commentary(item):
+            raise ValueError("Market commentary cannot replace an actual news event")
         published = item["published"].astimezone(ZoneInfo(market["zone"]))
         title, summary = item["title"], item.get("summary", "").strip()
         translation_note = ""
@@ -305,13 +301,13 @@ def format_digest(region, kind, chosen, local, translator=None, display_market=N
                 title,summary = item["title"],item.get("summary","").strip()
                 translation_note = "；中文翻译暂不可用，以下保留来源原文"
         context = editorial_context(item, region)
-        if context.get("us_event") or context.get("us_commentary"):
+        if context.get("us_event"):
             title = "🇺🇸 " + title
         attribution = ("｜作者/供稿：" + item["author"]) if item.get("author") else ""
         lines += ["", f"{number}. {context.get('headline', title)}", "",
                   summary or "来源目前只提供标题，详细内容仍需查阅原文。",
-                  "", ("对罗马尼亚的可能影响：" if display_market=="US" else "可能影响：") + context["impact"],
-                  *((["", "对法国的可能影响：" + editorial_context(item,"FR")["impact"]]) if display_market=="US" else []),
+                  "", "对" + market["name"] + "金融与股票市场的可能影响：" + context["impact"],
+                  *((["", "重点观察范围：" + context["assets"]]) if context.get("assets") else []),
                   "", "值得关注：" + context["watch"],
                   "", f"来源：{item['source']}{attribution}｜{item.get('time_label','发布时间')}：{published:%m月%d日 %H:%M}（{country_time}）" + translation_note,
                   "原文：" + item["url"]]

@@ -14,7 +14,6 @@ on:
         options:
           - RO
           - FR
-          - US
 permissions:
   contents: read
 concurrency:
