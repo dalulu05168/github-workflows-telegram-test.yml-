@@ -35,7 +35,7 @@ def official_url(article_url, feed_url):
     if article.scheme != "https" or not host or article.username or article.password:
         return False
     # Hostnames may differ within the same official organization.
-    roots = ("federalreserve.gov", "ecb.europa.eu", "bls.gov", "insee.fr")
+    roots = ("federalreserve.gov", "ecb.europa.eu", "bls.gov", "insee.fr", "bvb.ro", "bnr.ro")
     for root in roots:
         if (feed_host == root or feed_host.endswith("." + root)):
             return host == root or host.endswith("." + root)
