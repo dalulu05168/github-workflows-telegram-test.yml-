@@ -105,11 +105,11 @@ def rank(article, region):
 def telegram_send(message):
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     chat = os.getenv("TELEGRAM_CHAT_ID")
+    if os.getenv("DRY_RUN", "true").lower() != "false":
+        print("DRY_RUN enabled; preview:\\n" + message)
+        return False
     if not token or not chat:
         print("Telegram secrets absent; skipping delivery")
-        return False
-    if os.getenv("DRY_RUN", "true").lower() != "false":
-        print("DRY_RUN enabled; preview:\n" + message)
         return False
     resp = requests.post(
         f"https://api.telegram.org/bot{token}/sendMessage",
