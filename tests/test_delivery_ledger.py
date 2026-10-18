@@ -102,6 +102,27 @@ class LedgerTests(unittest.TestCase):
             runner2.resume("RO:2026-10-19-08", lambda _: self.fail("resend"))
         self.assertEqual(runner2.unfinished_slots("RO"), ["RO:2026-10-19-08"])
 
+    def test_multipart_timeout_never_repeats_first_confirmed_part(self):
+        transport = StubTransport()
+        ledger = self.ledger(transport)
+        ledger.claim("FR:2026-10-19-morning", ["id"], ["one", "two"], self.NOW)
+        called = []
+        def flaky_send(text):
+            called.append(text)
+            if text == "two":
+                raise requests.Timeout("Telegram response lost")
+            return 101
+        with self.assertRaises(requests.Timeout):
+            ledger.resume("FR:2026-10-19-morning", flaky_send)
+        restarted = self.ledger(transport)
+        parts = restarted.slots["FR:2026-10-19-morning"]["parts"]
+        self.assertEqual([x["status"] for x in parts], ["sent", "sending"])
+        self.assertEqual(parts[0]["telegram_message_id"], 101)
+        with self.assertRaises(DeliveryUncertain):
+            restarted.resume("FR:2026-10-19-morning",
+                             lambda _: self.fail("duplicate Telegram message"))
+        self.assertEqual(called, ["one", "two"])
+
     def test_github_write_failure_stops_before_telegram_send(self):
         transport = StubTransport()
         ledger = self.ledger(transport)
