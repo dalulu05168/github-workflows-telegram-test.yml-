@@ -215,9 +215,9 @@ def telegram_send(message):
 
 
 def due_slot(local):
-    # GitHub Actions runs at UTC :00/:30; allow a 20-minute grace period.
+    # GitHub Actions runs at UTC :00/:30 and can start late.
     minutes = local.hour * 60 + local.minute
-    if 450 <= minutes <= 470:
+    if 450 <= minutes < 480:
         return ("morning", local.strftime("%Y-%m-%d") + "-morning")
     if local.minute <= 20 and local.hour >= 8:
         return ("hourly", local.strftime("%Y-%m-%d-%H"))
