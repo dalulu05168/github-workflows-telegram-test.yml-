@@ -1,7 +1,7 @@
 import datetime as dt
 import unittest
 from zoneinfo import ZoneInfo
-from news_bot import due_slot, rank, format_digest, select_articles, preview_slot
+from news_bot import due_slot, rank, format_digest, select_articles, preview_slot, article_digest, local_source
 class SchedulingTests(unittest.TestCase):
     def test_morning(self):
         for zone in ("Europe/Bucharest","Europe/Paris"):
@@ -34,6 +34,24 @@ class SchedulingTests(unittest.TestCase):
                        url="https://www.bvb.ro/old", source="BVB",
                        regions=["RO"], published=now-dt.timedelta(hours=40))
         self.assertEqual(len(select_articles([article], "RO", set(), "morning", now)), 0)
+
+    def test_tracking_parameters_deduplicate(self):
+        clean = "https://www.bvb.ro/FinancialInstruments/Details/FinancialInstrumentsDetails.aspx?s=TEST"
+        tracked = clean + "&utm_source=email&fbclid=abc"
+        self.assertEqual(article_digest(clean), article_digest(tracked))
+        self.assertNotEqual(article_digest(clean), article_digest(clean + "2"))
+
+    def test_local_official_source_priority(self):
+        published = dt.datetime(2026, 10, 19, tzinfo=dt.timezone.utc)
+        local = dict(title="BVB issuer announcement", summary="", weight=4,
+                     source_url="https://www.bvb.ro/Rss/OperatiuniSiComunicateBVB.ashx",
+                     url="https://www.bvb.ro/item", published=published)
+        global_item = dict(title="Central bank announcement", summary="", weight=4,
+                           source_url="https://www.federalreserve.gov/feeds/press_all.xml",
+                           url="https://www.federalreserve.gov/item", published=published)
+        self.assertTrue(local_source(local, "RO"))
+        self.assertFalse(local_source(global_item, "RO"))
+        self.assertGreater(rank(local, "RO"), rank(global_item, "RO"))
 
     def test_rank(self):
         item=dict(title="Romania BNR interest rate decision",summary="",weight=2,published=dt.datetime(2026,10,18,tzinfo=dt.timezone.utc))
