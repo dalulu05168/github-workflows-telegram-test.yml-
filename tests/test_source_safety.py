@@ -9,6 +9,11 @@ class SourceSafetyTests(unittest.TestCase):
         self.assertFalse(official_url("https://ecb.europa.eu.evil.example/story",feed))
         self.assertFalse(official_url("http://www.ecb.europa.eu/story",feed))
 
+    def test_bvb_official_subdomains_only(self):
+        feed = "https://www.bvb.ro/Rss/OperatiuniSiComunicateBVB.ashx"
+        self.assertTrue(official_url("https://m.bvb.ro/press/example", feed))
+        self.assertFalse(official_url("https://bvb.ro.attacker.example/story", feed))
+
     def test_old_hourly_news_excluded(self):
         now=dt.datetime(2026,10,18,10,tzinfo=dt.timezone.utc)
         item={"title":"test","summary":"","weight":4,"url":"https://www.ecb.europa.eu/test",
