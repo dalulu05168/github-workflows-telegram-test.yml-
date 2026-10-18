@@ -17,18 +17,11 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install -r requirements.txt
-      - name: Preview verified headlines
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+      - name: Preview headlines
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DRY_RUN: 'true'
         run: python news_bot.py
-      - name: Save deduplication
-        run: |
-          if [ -n "$(git status --porcelain state/sent.json)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add state/sent.json
-            git commit -m "chore: record delivered headlines"
-            git push
-          fi
