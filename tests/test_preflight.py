@@ -11,6 +11,19 @@ class PreflightTests(unittest.TestCase):
         self.assertIn("RO", result["configured_local_sources"])
         self.assertIn("FR", result["configured_local_sources"])
 
+    def test_malformed_regions_report_error_without_crash(self):
+        with TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            (base / "config").mkdir()
+            (base / ".github/workflows").mkdir(parents=True)
+            (base / "config/sources.json").write_text(
+                '[{"name":"Broken","url":"https://example.org/rss","regions":null,"weight":2}]')
+            (base / ".github/workflows/finance-news.yml").write_text(
+                "DRY_RUN: 'true'\\npermissions:\\n  contents: read\\n")
+            result = inspect(base)
+            self.assertFalse(result["ok"])
+            self.assertTrue(any("invalid region" in e for e in result["errors"]))
+
     def test_fails_if_workflow_enables_live_delivery(self):
         with TemporaryDirectory() as tmp:
             base = Path(tmp)
