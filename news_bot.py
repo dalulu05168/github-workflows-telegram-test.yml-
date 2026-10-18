@@ -22,7 +22,7 @@ MARKETS = {
     "RO": {"flag": "🇷🇴", "name": "罗马尼亚", "zone": "Europe/Bucharest"},
     "FR": {"flag": "🇫🇷", "name": "法国", "zone": "Europe/Paris"},
 }
-WINDOW_HOURS = 30
+WINDOW_HOURS = 96  # Allow Monday morning to review weekend releases; selection stays time-bounded.
 HEADERS = {"User-Agent": "FinanceNewsBot/0.2 (public news monitoring)"}
 
 
@@ -45,7 +45,8 @@ def official_url(article_url, feed_url):
 
 def select_articles(articles, region, already, kind, now):
     """Avoid stale hourly headlines and prefer relevant, recent announcements."""
-    max_hours = 18 if kind == "morning" else 6
+    local = now.astimezone(ZoneInfo(MARKETS[region]["zone"]))
+    max_hours = (72 if local.weekday() == 0 else 18) if kind == "morning" else 6
     candidates = sorted(
         (item for item in articles if region in item["regions"]
          and 0 <= (now - item["published"]).total_seconds() <= max_hours * 3600),
