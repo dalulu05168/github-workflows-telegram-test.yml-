@@ -13,6 +13,14 @@ class MarketSessionTests(unittest.TestCase):
             local=dt.datetime.combine(date,dt.time(9,5),ZoneInfo("America/New_York"))
             events=indicative_session_windows(local.astimezone(dt.timezone.utc))
             self.assertTrue(any(e["market"]=="NYSE/Nasdaq" for e in events))
+
+    def test_half_hour_scheduler_boundaries(self):
+        zone=ZoneInfo("Europe/Paris")
+        for hour,minute,phase in ((8,30,"pre_open"),(9,0,"post_open")):
+            local=dt.datetime(2026,10,19,hour,minute,tzinfo=zone)
+            events=indicative_session_windows(local.astimezone(dt.timezone.utc))
+            self.assertTrue(any(e["market"]=="Euronext Paris" and e["phase"]==phase for e in events))
+
     def test_weekend_no_events(self):
         now=dt.datetime(2026,10,18,12,tzinfo=dt.timezone.utc)
         self.assertEqual(indicative_session_windows(now),[])
