@@ -111,6 +111,8 @@ def telegram_send(message):
     if not token or not chat:
         print("Telegram secrets absent; skipping delivery")
         return False
+    if len(message) > 4000:
+        raise ValueError("Telegram message exceeds safe text length; shorten digest before sending")
     resp = requests.post(
         f"https://api.telegram.org/bot{token}/sendMessage",
         json={"chat_id": chat, "text": message, "disable_web_page_preview": True},
