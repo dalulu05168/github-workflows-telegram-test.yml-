@@ -135,22 +135,28 @@ def due_slot(local):
 
 
 def format_digest(region, kind, chosen, local):
+    """Render the requested editorial template without inventing market impact."""
     market = MARKETS[region]
     heading = "晨间财经资讯｜昨夜美国及本国重点" if kind == "morning" else "财经资讯快报"
     lines = ["===== 资讯助理 =====",
              f"{market['flag']} {market['name']}｜{heading}",
-             f"🕒 编制时间：{local:%Y-%m-%d %H:%M %Z}",
-             "说明：以下为官方来源已发布资讯；未取得核验行情，不提供指数数值或推测市场影响。"]
-    for idx, item in enumerate(chosen, 1):
+             f"🕒 编制时间：{local:%Y-%m-%d %H:%M %Z}"]
+    for item in chosen:
         published = item["published"].astimezone(ZoneInfo(market["zone"]))
-        lines += ["", f"【{idx}】📰 {item['title']}",
-                  f"来源：{item['source']}",
-                  f"原文发布时间：{published:%Y-%m-%d %H:%M %Z}",
-                  f"🔗 官方原文：{item['url']}"]
-    lines += ["", "👀 后续关注：以官方后续公告及交易所正式行情为准。",
-              "===== 资讯助理 ====="]
+        summary = item.get("summary", "").strip()
+        facts = summary if summary else "官方来源仅提供标题，详细事实请查阅原文。"
+        impact = (f"尚无经过核验的证据证明该消息对{market['name']}股市、汇率或利率的具体影响；"
+                  "需结合当地官方数据和市场表现判断。")
+        lines += ["", "🔵 " + market["flag"] + " " + market["name"] + "｜财经资讯快报",
+                  "【新闻标题】", item["title"],
+                  "", "📰 发生了什么", facts,
+                  f"来源：{item['source']}｜发布时间：{published:%Y-%m-%d %H:%M %Z}",
+                  "", f"{market['flag']} 对{market['name']}市场的影响", impact,
+                  "", "👀 后续关注", "关注原发布机构的后续公告及相关官方市场数据。",
+                  "", f"🔗 官方原文：{item['url']}"]
+        # No image link unless a separately verified official image is available.
+    lines += ["", "===== 资讯助理 ====="]
     return "\n".join(lines)
-
 
 def main():
     state = json.loads(STATE.read_text(encoding="utf-8"))
