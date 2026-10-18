@@ -97,7 +97,7 @@ class GitHubLedger:
                 # Otherwise a later run could reuse the same article after pruning.
                 if not isinstance(record, dict) or not isinstance(record.get("parts"), list):
                     raise LedgerConflict("Malformed ledger record; cannot safely prune")
-                if any(not isinstance(part, dict) or part.get("status") != "sent"
+                if any(not isinstance(part, dict) or part.get("status") not in ("sent", "abandoned")
                        for part in record["parts"]):
                     continue
                 del self.slots[key]
@@ -133,7 +133,7 @@ class GitHubLedger:
         if any(p["status"] == "sending" for p in record["parts"]):
             raise DeliveryUncertain(f"Manual reconciliation required for {slot}")
         for part in record["parts"]:
-            if part["status"] == "sent":
+            if part["status"] in ("sent", "abandoned"):
                 continue
             if part["status"] != "pending":
                 raise LedgerConflict(f"Unknown delivery status in {slot}")
@@ -153,8 +153,52 @@ class GitHubLedger:
         return sorted(
             key for key, entry in self.slots.items()
             if key.startswith(region + ":")
-            and any(p["status"] != "sent" for p in entry["parts"])
+            and any(p["status"] not in ("sent", "abandoned") for p in entry["parts"])
         )
+
+    def reconcile(self, slot, part_index, expected_sha, message_id, note, now):
+        """Record a manually verified receipt; never reset sending to pending.
+
+        Require the revision inspected by the operator so reconciliation cannot
+        accidentally apply to a later delivery. This method never calls Telegram.
+        """
+        if not expected_sha or self.sha != expected_sha:
+            raise LedgerConflict("Ledger changed since inspection; inspect again")
+        if type(message_id) is not int or message_id < 1:
+            raise ValueError("A verified Telegram message_id is required")
+        if not isinstance(note, str) or not 1 <= len(note.strip()) <= 500:
+            raise ValueError("A reconciliation evidence note is required (1-500 characters)")
+        if type(part_index) is not int or part_index < 0:
+            raise ValueError("Invalid part index")
+        if slot not in self.slots or part_index >= len(self.slots[slot]["parts"]):
+            raise ValueError("Unknown slot or part")
+        part = self.slots[slot]["parts"][part_index]
+        if part.get("status") != "sending":
+            raise LedgerConflict("Only an uncertain sending part can be reconciled")
+        part.update(status="sent", telegram_message_id=message_id,
+                    reconciled_at=now.isoformat(), reconciliation_note=note.strip())
+        part.pop("text", None)
+        self.save()
+
+    def abandon(self, slot, expected_sha, note, now):
+        """Explicitly cancel remaining parts, keeping claimed IDs to prevent replay.
+
+        Use for an expired digest or an unknown receipt which cannot be verified.
+        Abandonment accepts possible non-delivery; it never authorizes a retry.
+        """
+        if not expected_sha or self.sha != expected_sha:
+            raise LedgerConflict("Ledger changed since inspection; inspect again")
+        if not isinstance(note, str) or not 1 <= len(note.strip()) <= 500:
+            raise ValueError("An abandonment reason is required (1-500 characters)")
+        if slot not in self.slots:
+            raise ValueError("Unknown slot")
+        record = self.slots[slot]
+        for part in record["parts"]:
+            if part["status"] not in ("sent", "abandoned"):
+                part.update(status="abandoned", abandoned_at=now.isoformat(),
+                            abandonment_note=note.strip())
+                part.pop("text", None)
+        self.save()
 
 
 def send_telegram_part(token, chat_id, message, transport=requests):

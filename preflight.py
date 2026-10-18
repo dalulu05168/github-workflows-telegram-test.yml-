@@ -39,7 +39,7 @@ def inspect(base=BASE):
         errors.append("Preview workflow should have read-only permissions")
     hosts = {region: [] for region in ALLOWED}
     local_domains = {"RO": ("bvb.ro", "bnr.ro", "insse.ro"),
-                     "FR": ("insee.fr", "euronext.com")}
+                     "FR": ("insee.fr", "euronext.com", "tresor.economie.gouv.fr")}
     for source in sources:
         if not isinstance(source, dict) or not isinstance(source.get("regions"), list):
             continue

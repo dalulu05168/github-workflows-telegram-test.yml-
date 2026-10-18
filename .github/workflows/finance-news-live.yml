@@ -1,0 +1,47 @@
+name: Telegram finance news (opt-in delivery)
+on:
+  schedule:
+    - cron: '10,40 * * * *'
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type SEND_NEWS to send eligible news in the current local delivery window'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: finance-news-live-ledger
+  cancel-in-progress: false
+jobs:
+  deliver:
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      ((github.event_name == 'schedule' && vars.NEWS_LIVE_ENABLED == 'true') ||
+       (github.event_name == 'workflow_dispatch' && inputs.confirmation == 'SEND_NEWS'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Validate preview configuration and run regression tests
+        run: |
+          python preflight.py
+          python -m unittest discover -s tests -v
+      - name: Deliver eligible original-language news with persistent ledger
+        env:
+          DRY_RUN: 'false'
+          LIVE_APPROVED: 'true'
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DELIVERY_GITHUB_TOKEN: ${{ github.token }}
+        run: python live_runner.py

@@ -175,6 +175,37 @@ class LedgerTests(unittest.TestCase):
         self.assertNotIn("RO:2026-09-10-08", ledger.slots)
         self.assertIn("RO:2026-10-19-08", ledger.slots)
 
+    def test_reconcile_receipt_then_resume_never_repeats_delivered_part(self):
+        transport = StubTransport()
+        ledger = self.ledger(transport)
+        key = "FR:2026-10-19-morning"
+        ledger.claim(key, ["id"], ["one", "two"], self.NOW)
+        ledger.slots[key]["parts"][0]["status"] = "sending"
+        ledger.save()
+        ledger.reconcile(key, 0, ledger.sha, 123, "Verified message in Telegram group", self.NOW)
+        fresh = self.ledger(transport)
+        sent = []
+        fresh.resume(key, lambda text: sent.append(text) or 124)
+        self.assertEqual(sent, ["two"])
+        self.assertEqual(fresh.slots[key]["parts"][0]["telegram_message_id"], 123)
+        self.assertNotIn("text", fresh.slots[key]["parts"][0])
+
+    def test_reconciliation_rejects_stale_revision_and_invalid_receipts(self):
+        transport = StubTransport()
+        ledger = self.ledger(transport)
+        key = "RO:2026-10-19-morning"
+        ledger.claim(key, ["id"], ["one"], self.NOW)
+        ledger.slots[key]["parts"][0]["status"] = "sending"
+        ledger.save()
+        with self.assertRaises(LedgerConflict):
+            ledger.reconcile(key, 0, "stale", 1, "evidence", self.NOW)
+        for message_id in (0, True, "1"):
+            with self.assertRaises(ValueError):
+                ledger.reconcile(key, 0, ledger.sha, message_id, "evidence", self.NOW)
+        with self.assertRaises(ValueError):
+            ledger.reconcile(key, 0, ledger.sha, 1, " ", self.NOW)
+        self.assertEqual(self.ledger(transport).slots[key]["parts"][0]["status"], "sending")
+
 
 if __name__ == "__main__":
     unittest.main()

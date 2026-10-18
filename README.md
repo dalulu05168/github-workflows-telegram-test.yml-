@@ -1,2 +1,57 @@
-# github-workflows-telegram-test.yml-
-指令
+# 罗马尼亚、法国财经新闻推送
+
+免费运行的 GitHub Actions + 官方 RSS/Atom 新闻机器人。按用户 2026-10-18 最新要求，**不翻译新闻**，保留官方原文标题与摘要；中文市场影响为条件性关注提示，不是行情验证或投资结论。不调用收费模型或翻译 API。
+
+## 运行方式
+
+- `finance-news.yml`：抓取、测试和预览，始终 `DRY_RUN=true`、只读权限、无 Telegram 密钥。
+- `finance-news-live.yml`：独立发送入口。手动运行需填写 `SEND_NEWS`；定时运行需仓库变量 `NEWS_LIVE_ENABLED=true`，默认不开启。只允许 main 分支。
+- 当地 07:30–07:59 晨报，08 点起每小时前 20 分钟筛选快报；正式入口在 UTC :10/:40 唤醒。周一晨报回看 72 小时，其他晨报 18 小时，快报 6 小时。GitHub 调度可能延迟，不保证准点送达。
+- 无合格新闻不发送。法国与罗马尼亚独立选稿、去重，同一新闻可以分别向两国发布。
+
+## 首次启用
+
+1. 在仓库 Secrets 配置 `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID`，不要在聊天或代码中粘贴。
+2. 手动运行现有 `Telegram one-time connectivity test`，填写 `SEND_ONE_TEST`，核对目标群收到测试消息。
+3. 在新闻时段手动运行 `Telegram finance news (opt-in delivery)`，填写 `SEND_NEWS`，核对分国消息及 `state/live_ledger.json` 的回执。无新新闻或不在时段不会强行发送。
+4. 验收后设置仓库变量 `NEWS_LIVE_ENABLED=true` 开启定时发送；置为 `false` 暂停。正在运行的任务需另行取消。
+
+正式工作流使用内置 `github.token` 写账本，无需长期 GitHub PAT。若分支保护禁止 Actions 更新账本，程序会在发送前停止，需调整账本存储方案。
+
+## 中断与人工对账
+
+正式账本是 `state/live_ledger.json`；预览的 `state/sent.json` 不代表实际送达。发请求前登记 `sending`，收到 Telegram `message_id` 才标记 `sent`。同一时段重启只续发尚未尝试的 `pending` 分段。超时未知结果不自动重试，旧时段消息不自动补发；一个国家受阻时仍可处理另一个国家。
+
+Telegram 没有发送幂等键，因此不承诺 exactly-once；结果不明可能需要人工核对或接受漏发。
+
+设置环境变量 `GITHUB_REPOSITORY`、`DELIVERY_GITHUB_TOKEN`（仅该仓库 contents 读写）后运行：
+
+```bash
+# 只显示账本 SHA、分段状态和回执，不显示密钥或正文
+python reconcile_delivery.py
+
+# 已核实送达：登记真实回执，part 从 0 开始
+python reconcile_delivery.py --confirm-receipt --slot RO:2026-10-19-morning \
+  --part 0 --expected-sha INSPECTED_SHA --message-id 123 --note '已人工核对目标群回执'
+
+# 无法核实或消息已过期：取消剩余分段，接受可能漏发，保留文章占用防重发
+python reconcile_delivery.py --abandon-slot --slot RO:2026-10-19-morning \
+  --expected-sha INSPECTED_SHA --note '消息已过期，接受可能漏发'
+```
+
+对账前暂停定时发送并等待在途任务结束；SHA 不匹配时重新查看，不要盲目重试。
+
+## 验证与边界
+
+```bash
+python -m pip install -r requirements.txt
+python preflight.py
+python -m unittest discover -s tests -v
+RSS_CACHE_DIR=.rss-cache python check_sources.py
+RSS_CACHE_DIR=.rss-cache python news_coverage.py
+DRY_RUN=true PREVIEW_ALL=true RSS_CACHE_DIR=.rss-cache python news_bot.py
+```
+
+法国财政总司官方新闻源入口：<https://www.tresor.economie.gouv.fr/Flux>。该源是经济研究及政策发布，INSEE BDM 仍为统计数据更新源。Atom 仅有更新时间时显示「源更新时间」，不冒称首次发布时间。
+
+市场开市提示仍为独立预览，未随新闻发送；尚未接入节假日及实时开市验证。程序处理官方 RSS 摘要，不声称逐篇完成全文事实核查。历史验收见 `RELEASE_CHECKLIST.md`，当前运行说明以本文件为准。

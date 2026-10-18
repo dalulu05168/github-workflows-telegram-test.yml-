@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+.rss-cache/
+.venv/
+.env
+.env.*

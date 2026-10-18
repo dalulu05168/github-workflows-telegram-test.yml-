@@ -48,6 +48,7 @@ def run_live(environment=None, now=None, articles=None,
     sender = telegram_sender or (
         lambda text: send_telegram_part(bot_token, chat_id, text))
     any_sent = False
+    blocked = []
     for region, market in MARKETS.items():
         local = now.astimezone(ZoneInfo(market["zone"]))
         slot = due_slot(local)
@@ -55,8 +56,21 @@ def run_live(environment=None, now=None, articles=None,
             continue
         kind, suffix = slot
         key = f"{region}:{suffix}"
-        if ledger.unfinished_slots(region):
-            raise DeliveryUncertain(f"Unreconciled {region} delivery; manual review required")
+        unfinished = ledger.unfinished_slots(region)
+        if unfinished:
+            # A claim can survive a crash before its first Telegram call, or
+            # between confirmed parts. Resume only the current delivery window;
+            # older digests need review rather than delivering stale news.
+            if unfinished != [key]:
+                blocked.append(region)
+                continue
+            try:
+                ledger.resume(key, sender)
+            except DeliveryUncertain:
+                blocked.append(region)
+                continue
+            any_sent = True
+            continue
         if key in ledger.slots:
             continue
         already = ledger.claimed_articles(region)
@@ -69,8 +83,14 @@ def run_live(environment=None, now=None, articles=None,
         article_ids = [digest for _, digest in selected]
         # Must persist before calling Telegram, including for multipart digests.
         ledger.claim(key, article_ids, chunks, now)
-        ledger.resume(key, sender)
+        try:
+            ledger.resume(key, sender)
+        except DeliveryUncertain:
+            blocked.append(region)
+            continue
         any_sent = True
+    if blocked:
+        raise DeliveryUncertain("Manual delivery review required for " + ", ".join(blocked))
     return any_sent
 
 

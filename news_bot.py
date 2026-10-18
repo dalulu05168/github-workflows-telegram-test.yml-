@@ -46,7 +46,7 @@ def official_url(article_url, feed_url):
 
 LOCAL_DOMAINS = {
     "RO": ("bvb.ro", "bnr.ro", "insse.ro"),
-    "FR": ("insee.fr", "euronext.com"),
+    "FR": ("insee.fr", "euronext.com", "tresor.economie.gouv.fr"),
 }
 
 
@@ -141,6 +141,7 @@ def parse_news(diagnostics=None):
                 results.append({
                     "title": title, "url": url, "summary": summary,
                     "published": published_at, "source": source["name"],
+                    "time_label": "发布时间" if entry.get("published_parsed") else "源更新时间",
                     "regions": source["regions"], "weight": source["weight"],
                     "source_url": source["url"],
                 })
@@ -260,7 +261,7 @@ def format_digest(region, kind, chosen, local):
         lines += ["", ("🔴" if context["major"] else "🔵") + " " + market["flag"] + " " + market["name"] + "｜财经资讯快报",
                   "【新闻标题】", item["title"],
                   "", "📰 发生了什么", facts,
-                  f"来源：{item['source']}｜发布时间：{published:%Y-%m-%d %H:%M %Z}",
+                  f"来源：{item['source']}｜{item.get('time_label', '发布时间')}：{published:%Y-%m-%d %H:%M %Z}",
                   "", f"{market['flag']} 对{market['name']}市场的影响", impact,
                   "", "👀 后续关注", context["watch"],
                   "", f"🔗 官方原文：{item['url']}"]

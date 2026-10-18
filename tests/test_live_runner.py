@@ -58,6 +58,44 @@ class LiveRunnerTests(unittest.TestCase):
             run_live(ENV, now, [], lambda r, t: GitHubLedger(r,t,transport=transport),
                      lambda _: self.fail("must not send"))
 
+    def test_restart_resumes_only_pending_parts_in_current_window(self):
+        now = dt.datetime(2026, 10, 19, 4, 30, tzinfo=dt.timezone.utc)
+        transport = StubTransport()
+        ledger = GitHubLedger("owner/repo", "fake", transport=transport)
+        ledger.load()
+        key = "RO:2026-10-19-morning"
+        ledger.claim(key, ["old"], ["one", "two"], now)
+        ledger.slots[key]["parts"][0].update(status="sent", telegram_message_id=42)
+        ledger.save()
+        sent = []
+        factory = lambda r, t: GitHubLedger(r, t, transport=transport)
+        self.assertTrue(run_live(ENV, now, [], factory, lambda text: sent.append(text) or 43))
+        self.assertEqual(sent, ["two"])
+        self.assertFalse(run_live(ENV, now, [], factory, lambda _: self.fail("duplicate")))
+
+    def test_current_uncertain_part_still_needs_review(self):
+        now = dt.datetime(2026, 10, 19, 4, 30, tzinfo=dt.timezone.utc)
+        transport = StubTransport()
+        ledger = GitHubLedger("owner/repo", "fake", transport=transport)
+        ledger.load()
+        key = "RO:2026-10-19-morning"
+        ledger.claim(key, ["old"], ["part"], now)
+        ledger.slots[key]["parts"][0]["status"] = "sending"
+        ledger.save()
+        with self.assertRaises(DeliveryUncertain):
+            run_live(ENV, now, [], lambda r,t: GitHubLedger(r,t,transport=transport),
+                     lambda _: self.fail("must not resend"))
+
+    def test_old_pending_digest_is_not_delivered_late(self):
+        now = dt.datetime(2026, 10, 19, 4, 30, tzinfo=dt.timezone.utc)
+        transport = StubTransport()
+        ledger = GitHubLedger("owner/repo", "fake", transport=transport)
+        ledger.load()
+        ledger.claim("RO:2026-10-18-morning", ["old"], ["stale"], now)
+        with self.assertRaises(DeliveryUncertain):
+            run_live(ENV, now, [], lambda r,t: GitHubLedger(r,t,transport=transport),
+                     lambda _: self.fail("must not deliver old digest"))
+
 
 if __name__ == "__main__":
     unittest.main()

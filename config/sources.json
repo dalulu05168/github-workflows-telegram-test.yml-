@@ -44,6 +44,12 @@
     "weight": 5
   },
   {
+    "name": "French Treasury official publications",
+    "url": "https://www.tresor.economie.gouv.fr/Flux/Atom/Articles/Home",
+    "regions": ["FR"],
+    "weight": 5
+  },
+  {
     "name": "INSEE BDM official statistical data updates",
     "url": "https://bdm.insee.fr/series/sdmx/rss/donnees",
     "regions": [
