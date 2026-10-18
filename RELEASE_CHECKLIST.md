@@ -9,7 +9,7 @@
 - 条件性分析：`editorial.py`；不具备基于真实行情的因果验证。
 - 来源：美联储、ECB、BLS，以及 BVB 官网 RSS 页面所列的市场操作与公告 RSS。BVB 入口来源：<https://www.bvb.ro/Services/DataVending/ForProfessionals>。**入口由官网确认，但本项目尚未证实 RSS 在 GitHub Actions 中能成功抓取并提供近期新闻。**
 - INSEE 官方提供 RSS 订阅页：<https://www.insee.fr/fr/information/2381941>，但未核实可供本程序直接抓取的 RSS 终端地址，**故未配置**。
-- BNR 和 Euronext Paris 尚无经验证可用的新闻 RSS 配置。
+- BNR 和 Euronext Paris 尚无经验证可用的新闻 RSS 配置。\n- 已配置 INSEE 官方技术文档所列统计数据更新 RSS：`https://bdm.insee.fr/series/sdmx/rss/donnees`。**这是统计数据更新源，不是完整的 INSEE 新闻稿 RSS；实际抓取与文章内容仍未在 Actions 日志验证。**
 
 ## 本轮本地验证的严格范围
 
@@ -23,7 +23,7 @@
 
 1. 最新 GitHub Actions `Run tests` 步骤成功，且保存可核查的运行链接。
 2. `Check RSS source health` 输出各来源的有效性、最近一篇发布时间、是否超过 72 小时；周末和节假日应按真实发布频率判断，不可仅凭 72 小时判定故障。
-3. BVB RSS 实际解析成功；法国至少接入一个经核实的本地官方来源；BNR/INSEE/Euronext 优先，但不能猜测 URL。
+3. BVB RSS 实际解析成功；法国本地 INSEE 数据更新 RSS 在 Actions 中实际解析成功，并继续补充真正的法国新闻稿来源；BNR/INSEE/Euronext 优先，但不能猜测 URL。
 4. 按实际样本核对每国晨报、小时快报的数量、时效、来源、分析和图片，验证不虚构数据。当前 RSS 摘要仍是原文语言，已明确标记「未翻译」；**完整中文事实解读尚未实现**。
 5. 在夏令时与冬令时分别测试 07:30 本地晨报和各交易所开盘窗口；节假日须有交易日历，不得把时钟提示当作真实开市。
 6. 完成**跨次运行持久化**与**多段消息部分成功后重试**的幂等测试。当前工作流持久化步骤明确禁用，且没有 exactly-once 发送保证。已在代码中阻止真实多段发送，避免部分成功后重试重复发；这属于保护性限制，不是完成了可靠重试。
