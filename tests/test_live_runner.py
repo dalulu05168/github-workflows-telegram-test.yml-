@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 from delivery_ledger import DeliveryUncertain
 from live_runner import run_live, validate_live_env
-from tests.test_delivery_ledger import StubTransport
+from test_delivery_ledger import StubTransport
 from delivery_ledger import GitHubLedger
 
 
