@@ -25,13 +25,5 @@
       "FR"
     ],
     "weight": 3
-  },
-  {
-    "name": "INSEE official statistical data updates",
-    "url": "https://bdm.insee.fr/series/sdmx/rss/donnees",
-    "regions": [
-      "FR"
-    ],
-    "weight": 2
   }
 ]
