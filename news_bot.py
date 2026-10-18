@@ -240,7 +240,7 @@ def due_slot(local):
     minutes = local.hour * 60 + local.minute
     if 450 <= minutes < 480:
         return ("morning", local.strftime("%Y-%m-%d") + "-morning")
-    if local.minute <= 20 and local.hour >= 8:
+    if local.minute >= 30 and local.hour >= 8:
         return ("hourly", local.strftime("%Y-%m-%d-%H"))
     return None
 

@@ -21,12 +21,23 @@ class SchedulingTests(unittest.TestCase):
         for zone in ("Europe/Bucharest", "Europe/Paris"):
             late = dt.datetime(2026, 10, 19, 7, 59, tzinfo=ZoneInfo(zone))
             self.assertEqual(due_slot(late)[0], "morning")
-            hourly = late.replace(hour=8, minute=0)
+            hourly = late.replace(hour=8, minute=30)
             self.assertEqual(due_slot(hourly)[0], "hourly")
 
     def test_hourly(self):
         self.assertIsNone(due_slot(dt.datetime(2026,10,18,7,10,tzinfo=ZoneInfo("Europe/Paris"))))
-        self.assertEqual(due_slot(dt.datetime(2026,10,18,9,10,tzinfo=ZoneInfo("Europe/Paris")))[0],"hourly")
+        self.assertEqual(due_slot(dt.datetime(2026,10,18,9,30,tzinfo=ZoneInfo("Europe/Paris")))[0],"hourly")
+
+    def test_local_half_hour_schedule_and_delay_window(self):
+        for zone in ("Europe/Paris", "Europe/Bucharest"):
+            for month in (1, 7):
+                local = dt.datetime(2026, month, 19, 7, 30, tzinfo=ZoneInfo(zone))
+                self.assertEqual(due_slot(local)[0], "morning")
+                for hour in (8, 9, 15, 23):
+                    for minute in (30, 40, 59):
+                        self.assertEqual(due_slot(local.replace(hour=hour, minute=minute))[0], "hourly")
+                    for minute in (0, 10, 29):
+                        self.assertIsNone(due_slot(local.replace(hour=hour, minute=minute)))
     def test_monday_morning_includes_weekend_not_hourly(self):
         now = dt.datetime(2026, 10, 19, 4, 30, tzinfo=dt.timezone.utc)
         article = dict(title="BVB official weekend release", summary="", weight=5,

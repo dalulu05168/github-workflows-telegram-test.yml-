@@ -54,7 +54,7 @@ class TakeoverTests(unittest.TestCase):
         fresh.resume(key, lambda _: self.fail("abandoned message must not be sent"))
 
     def test_one_blocked_country_does_not_prevent_the_other_country(self):
-        now = self.NOW.replace(hour=6, minute=10)  # Both countries' hourly window.
+        now = self.NOW.replace(hour=6, minute=30)  # Both countries' hourly window.
         transport = StubTransport()
         ledger = GitHubLedger("owner/repo", "fake", transport=transport)
         ledger.load()
@@ -76,7 +76,7 @@ class TakeoverTests(unittest.TestCase):
             for zone in ("Europe/Paris", "Europe/Bucharest"):
                 local = dt.datetime(2026, month, 19, 7, 40, tzinfo=ZoneInfo(zone))
                 self.assertEqual(due_slot(local)[0], "morning")
-                self.assertEqual(due_slot(local.replace(hour=8, minute=10))[0], "hourly")
+                self.assertEqual(due_slot(local.replace(hour=8, minute=30))[0], "hourly")
 
     def test_live_workflow_preserves_original_schedule_and_preview_stays_read_only(self):
         base = Path(__file__).resolve().parents[1]
