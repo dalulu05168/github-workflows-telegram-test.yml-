@@ -39,10 +39,10 @@ class CountryRoutingTests(unittest.TestCase):
   a={'title':'Nvidia announces semiconductor investment','summary':'Nvidia announced a new factory.','published':NOW,'source':'CNBC','source_url':'https://www.cnbc.com/rss','url':'https://www.cnbc.com/story','regions':['RO','FR'],'weight':4,'market':'GLOBAL','coverage':'us_market','asset_class':'equities'}
   for region in ['RO','FR']:
    text=format_digest(region,'hourly',[a],NOW)
-   self.assertIn('美股相关消息：本期包含',text)
+   self.assertIn('📰 1. 🇺🇸',text)
    self.assertIn('🇺🇸',text)
    self.assertIn('重点观察范围：',text)
-   self.assertIn(('罗马尼亚' if region=='RO' else '法国')+'金融与股票市场的可能影响：',text)
+   self.assertIn('对'+('罗马尼亚' if region=='RO' else '法国')+'的可能影响：\n',text)
 
  def test_weekend_market_analysis_is_not_counted_as_an_observed_event(self):
   a={'title':'There is a silent market rotation inside the S&P 500 warning of more weakness ahead','summary':'A triple-top reversal pattern points to underperformance for the S&P 500.','published':NOW,'source':'MarketWatch','financial_news_only':True,'source_url':'https://feeds.content.dowjones.io/public/rss/mw_topstories','url':'https://www.marketwatch.com/story/test','regions':['RO','FR'],'weight':4,'market':'GLOBAL','coverage':'us_market','asset_class':'equities'}

@@ -205,7 +205,7 @@ def split_telegram_message(message, limit=4000):
         return [message]
 
     # Lookahead preserves the two newlines in the next news section.
-    sections = re.split(r"(?=\n\n(?:🔵|🔴) 🇷🇴 |\n\n(?:🔵|🔴) 🇫🇷 )", message)
+    sections = re.split(r"(?=\n\n──────────\n\n📰 \d+\.|\n\n(?:🔵|🔴) 🇷🇴 |\n\n(?:🔵|🔴) 🇫🇷 )", message)
     chunks = []
     current = ""
 
@@ -282,11 +282,10 @@ def format_digest(region, kind, chosen, local, translator=None):
     period = "早间资讯" if kind == "morning" else ("午间资讯" if local.hour < 18 else "晚间资讯")
     country_time = market["name"] + "时间"
     lines = ["===== 资讯助理 =====", f"{market['flag']} {market['name']}＋🇺🇸 美国相关事件｜{period}",
-             f"{country_time} {local:%m月%d日 %H:%M}"]
-    if any(us_event_context(item,region) for item in chosen):
-        lines.append("美股相关消息：本期包含已识别的公司或市场事件，发布时间见各条来源。")
-    else:
-        lines.append("美股相关消息：本期暂无符合时效与去重要求的新事件。")
+             "", f"🕒 {country_time} {local:%m月%d日 %H:%M}"]
+    if not any(us_event_context(item,region) for item in chosen):
+        lines += ["", "🇺🇸 美股相关消息：本期暂无符合时效与去重要求的新事件。"]
+    translated_any = False
     for number,item in enumerate(chosen,1):
         if is_us_market_commentary(item):
             raise ValueError("Market commentary cannot replace an actual news event")
@@ -297,21 +296,28 @@ def format_digest(region, kind, chosen, local, translator=None):
             try:
                 title = translator(title)
                 summary = translator(summary) if summary else ""
-                translation_note = "；正文为来源内容的中文翻译"
+                translated_any = True
             except TranslationUnavailable:
                 title,summary = item["title"],item.get("summary","").strip()
-                translation_note = "；中文翻译暂不可用，以下保留来源原文"
+                translation_note = "🌐 中文翻译暂不可用，以下保留来源原文。"
         context = editorial_context(item, region)
-        if context.get("us_event"):
-            title = "🇺🇸 " + title
+        heading = context.get('headline', title)
+        if context.get("us_event") and '🇺🇸' not in heading:
+            heading = "🇺🇸 " + heading
         attribution = ("｜作者/供稿：" + item["author"]) if item.get("author") else ""
-        lines += ["", f"{number}. {context.get('headline', title)}", "",
+        if number > 1:
+            lines += ["", "──────────"]
+        lines += ["", f"📰 {number}. {heading}", "",
+                  *([translation_note, ""] if translation_note else []),
                   summary or "来源目前只提供标题，详细内容仍需查阅原文。",
-                  "", "对" + market["name"] + "金融与股票市场的可能影响：" + context["impact"],
-                  *((["", "重点观察范围：" + context["assets"]]) if context.get("assets") else []),
-                  "", "值得关注：" + context["watch"],
-                  "", f"来源：{item['source']}{attribution}｜{item.get('time_label','发布时间')}：{published:%m月%d日 %H:%M}（{country_time}）" + translation_note,
+                  "", "🔎 对" + market["name"] + "的可能影响：", context["impact"],
+                  *((["", "📌 重点观察范围：", context["assets"]]) if context.get("assets") else []),
+                  "", "👀 值得关注：", context["watch"],
+                  "", f"🔗 来源：{item['source']}{attribution}",
+                  f"{item.get('time_label','发布时间')}：{published:%m月%d日 %H:%M}（{country_time}）",
                   "原文：" + item["url"]]
+    if translated_any:
+        lines += ["", "🌐 正文为来源内容的中文翻译；机译不等于事实核验。"]
     if not chosen:
         lines += ["", "本时段暂无符合时效与去重要求的新消息。"]
     return "\n".join(lines)

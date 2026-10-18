@@ -124,11 +124,13 @@ def format_snapshot(event, region, quotes, now):
     available=[q for q in quotes if q['status']=='RECENT_DELAY_UNKNOWN' or
                (q['status']!='UNAVAILABLE' and _previous_close_reference(event,q))]
     lines=['===== 资讯助理 =====', f'{FLAGS[region]} {NAMES[region]}｜{FLAGS[market]} {NAMES[market]}{phase}指标',
-           f'{NAMES[region]}时间：{local:%m月%d日 %H:%M}',
+           '', f'🕒 {NAMES[region]}时间：{local:%m月%d日 %H:%M}',
            f'计划节点：{target:%H:%M}（{NAMES[market]}当地时间）',
+           '',
            '数据状态：'+('部分可用；免费报价可能延迟' if available else '数据缺失／仅有旧报价，未取得有效节点行情'),
            '', '📊 指标快照']
     for item in quotes:
+        lines.append('')
         label=item.get('label',item['symbol'])
         if item['status']=='UNAVAILABLE':
             lines.append(f'• {label}：未取得。'); continue
@@ -142,11 +144,11 @@ def format_snapshot(event, region, quotes, now):
         change=item.get('change_pct')
         change_text=f'；较来源参考前收 {change:+.2f}%' if change is not None and item['symbol']!='^TNX' else ''
         lines.append(f'• {label}：{item["price"]:,.4f} {item.get("unit","")}{change_text}\n  截至{asof:%m月%d日 %H:%M}｜{tag}')
-    lines += ['', '⚠️ 尚缺指标']
+    lines += ['', '⚠️ 尚缺指标', '']
     if market=='RO':
         lines.append('BET点位、银行／能源权重股表现、TTF：尚无已验证可用的行情接口。')
     lines.append('上涨／下跌／平盘家数、全市场累计成交额、过去交易日同时段成交比较、五档盘口：未接入可靠来源，不以指数成交量替代。')
-    lines += ['', '🔎 怎么看']
+    lines += ['', '🔎 怎么看', '']
     if market=='US':
         text={'RO':'美股期货、美元与能源价格可作为外围参考；是否影响BET，还需对照本地银行、能源股和成交变化。',
               'FR':'美国市场、欧元与油价可作为外围参考；是否传导至CAC40，仍需对照法国银行、工业和消费股表现。'}[region]
@@ -155,9 +157,10 @@ def format_snapshot(event, region, quotes, now):
     else:
         text='将CAC40与银行、能源、消费代表股分开观察；少数代表股表现不能代替全部成分股广度。'
     lines.append(f'对{NAMES[region]}：{text}')
-    lines += ['', '👀 接下来关注', '先确认报价时间和当日交易状态，再观察上涨是否扩散、成交是否配合；本期不据此给出买卖结论。',
-              '', '来源：Yahoo Finance公开报价；每项时间已换算为本条标注的当地时间。涨跌幅按来源chartPreviousClose计算；期货合约与现货指数分开看。',
-              '交易日历：exchange-calendars维护的XBSE／XPAR／XNYS日历；临时停市仍以交易所公告为准。']
+    lines += ['', '👀 接下来关注', '', '先确认报价时间和当日交易状态，再观察上涨是否扩散、成交是否配合。',
+              '', '🔗 来源：Yahoo Finance公开报价（可能延迟）',
+              '时间已换算为本条当地时间；涨跌幅按来源参考前收计算。期货与现货分开看。',
+              '按维护的交易日历安排；临时停市以交易所公告为准。', '']
     lines.extend(dict.fromkeys(q['url'] for q in quotes if q.get('url')))
     return '\n'.join(lines)
 
