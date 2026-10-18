@@ -57,3 +57,11 @@ DRY_RUN=true PREVIEW_ALL=true python news_bot.py
 - `Report country news coverage` 现在写入 GitHub Actions 运行摘要：RO/FR 选中数量、周一晨报窗口及各 RSS 的拒绝原因。用户无需靠猜测绿色勾号。
 - 本地仅使用从核心函数重建的离线测试文件执行 4 项测试（全部通过）；**没有运行完整仓库依赖测试或新提交的全部单元测试**，需要后续 GitHub Actions 验证。
 - `DRY_RUN=true`、无密钥、跨次持久化 disabled 的边界保持不变。
+
+## 2026-10-18T02:25Z 实际 CI 验收（可复核）
+
+- [GitHub Actions #39090024514](https://github.com/dalulu05168/github-workflows-telegram-test.yml-/actions/runs/39090024514) 在提交 `c603c8768add24fbde82f4d15d63dbd6898121e2` 上**成功**。日志明确记录 `Ran 65 tests ... OK`；RSS 健康、排除原因、覆盖率、新闻预览步骤均成功；真实发送状态持久化步骤为 skipped。
+- 同次运行启用了仅限运行环境的 RSS 缓存，在新闻预览日志中没有 `Unavailable feed` 或连接超时。健康检查会缓存通过基本 RSS/日期校验的响应，后续诊断与预览复用缓存，避免重复请求得到不同结果。
+- [GitHub Actions #39089710955](https://github.com/dalulu05168/github-workflows-telegram-test.yml-/actions/runs/39089710955) 通过 60 项测试，其 BVB 排除诊断显示 14 条、96h 内可用 13 条、其中 72h 内 5 条；此计数是筛选窗口信息，**不能被理解为周日小时快报可以推送 5 条**。
+- 工作流已启用 push(main) 自动运行完整 DRY_RUN 测试；此后修改不再需要手动点 Run workflow。
+- **仍未交付**：法国真正财经新闻稿来源和完整中文事实核查、跨次运行持久化去重、多段发送可靠重试、节假日交易日历、真实 Telegram 群组验收。未获得用户明确授权，不打开 LIVE_APPROVED/DRY_RUN 或 GitHub Secrets。
