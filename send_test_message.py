@@ -1,6 +1,6 @@
 """Send exactly one clearly labeled Telegram connectivity test.
 
-Only a manually dispatched workflow may set TEST_SEND_CONFIRM=SEND_ONE_TEST.
+Only a user-authorized one-time workflow may set TEST_SEND_CONFIRM=SEND_ONE_TEST.
 This is separate from the DRY_RUN finance-news workflow and does not enable
 recurring delivery or send real finance headlines.
 """
@@ -12,7 +12,7 @@ MESSAGE = (
     "✅ 财经资讯助理｜Telegram 连通性测试\n"
     "🇷🇴 罗马尼亚 · 🇫🇷 法国\n"
     "这是一条经用户授权的单次测试消息，不是财经新闻。\n"
-    "定时财经新闻推送尚未开启。"
+    "新闻播报节点：两国当地07:30开始，此后每小时半点。"
 )
 
 
