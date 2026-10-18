@@ -1,0 +1,31 @@
+name: Telegram one-time connectivity test (manual only)
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type SEND_ONE_TEST to authorize exactly one Telegram connectivity message'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: telegram-one-time-connectivity-test
+  cancel-in-progress: false
+jobs:
+  send-one-test:
+    if: ${{ github.event.inputs.confirmation == 'SEND_ONE_TEST' }}
+    runs-on: ubuntu-latest
+    environment: telegram-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install HTTP client
+        run: python -m pip install requests==2.32.3
+      - name: Send one test message only
+        env:
+          TEST_SEND_CONFIRM: ${{ github.event.inputs.confirmation }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python send_test_message.py
