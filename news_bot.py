@@ -8,6 +8,7 @@ import os
 import re
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from urllib.parse import urlparse
 import feedparser
 import requests
 
@@ -21,6 +22,40 @@ MARKETS = {
 }
 WINDOW_HOURS = 30
 HEADERS = {"User-Agent": "FinanceNewsBot/0.2 (public news monitoring)"}
+
+
+def official_url(article_url, feed_url):
+    """Require HTTPS and same organizational domain as the configured official feed."""
+    article = urlparse(article_url)
+    feed = urlparse(feed_url)
+    host = (article.hostname or "").lower()
+    feed_host = (feed.hostname or "").lower()
+    if article.scheme != "https" or not host or article.username or article.password:
+        return False
+    # Hostnames may differ within the same official organization.
+    roots = ("federalreserve.gov", "ecb.europa.eu", "bls.gov")
+    for root in roots:
+        if (feed_host == root or feed_host.endswith("." + root)):
+            return host == root or host.endswith("." + root)
+    return host == feed_host
+
+
+def select_articles(articles, region, already, kind, now):
+    """Avoid stale hourly headlines and prefer relevant, recent announcements."""
+    max_hours = 18 if kind == "morning" else 6
+    candidates = sorted(
+        (item for item in articles if region in item["regions"]
+         and 0 <= (now - item["published"]).total_seconds() <= max_hours * 3600),
+        key=lambda item: rank(item, region), reverse=True,
+    )
+    selected = []
+    for item in candidates:
+        digest = hashlib.sha256(item["url"].encode("utf-8")).hexdigest()
+        if digest not in already and all(digest != other[1] for other in selected):
+            selected.append((item, digest))
+        if len(selected) >= (6 if kind == "morning" else 3):
+            break
+    return selected
 
 
 def parse_news():
@@ -39,7 +74,7 @@ def parse_news():
                     continue
                 url = entry.get("link", "")
                 title = re.sub(r"<[^>]*>", "", html.unescape(entry.get("title", ""))).strip()
-                if not url.startswith("https://") or not title:
+                if not official_url(url, source["url"]) or not title:
                     continue
                 summary = re.sub(r"<[^>]*>", " ", html.unescape(entry.get("summary", "")))
                 summary = " ".join(summary.split())[:450]
@@ -130,15 +165,7 @@ def main():
             continue
         # De-duplicate within each country, not across countries.
         already = {digest for k, ids in state.items() if k.startswith(region + ":") for digest in ids}
-        candidates = sorted((item for item in articles if region in item["regions"]),
-                            key=lambda item: rank(item, region), reverse=True)
-        selected = []
-        for item in candidates:
-            digest = hashlib.sha256(item["url"].encode("utf-8")).hexdigest()
-            if digest not in already and all(digest != other[1] for other in selected):
-                selected.append((item, digest))
-            if len(selected) == (6 if kind == "morning" else 3):
-                break
+        selected = select_articles(articles, region, already, kind, NOW)
         if not selected:
             print(f"No verified new articles for {region} {suffix}")
             continue
