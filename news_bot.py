@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from urllib.parse import urlparse
 import feedparser
 import requests
+from editorial import editorial_context
 
 BASE = Path(__file__).resolve().parent
 STATE = BASE / "state/sent.json"
@@ -145,14 +146,14 @@ def format_digest(region, kind, chosen, local):
         published = item["published"].astimezone(ZoneInfo(market["zone"]))
         summary = item.get("summary", "").strip()
         facts = summary if summary else "官方来源仅提供标题，详细事实请查阅原文。"
-        impact = (f"尚无经过核验的证据证明该消息对{market['name']}股市、汇率或利率的具体影响；"
-                  "需结合当地官方数据和市场表现判断。")
-        lines += ["", "🔵 " + market["flag"] + " " + market["name"] + "｜财经资讯快报",
+        context = editorial_context(item, region)
+        impact = context["impact"]
+        lines += ["", ("🔴" if context["major"] else "🔵") + " " + market["flag"] + " " + market["name"] + "｜财经资讯快报",
                   "【新闻标题】", item["title"],
                   "", "📰 发生了什么", facts,
                   f"来源：{item['source']}｜发布时间：{published:%Y-%m-%d %H:%M %Z}",
                   "", f"{market['flag']} 对{market['name']}市场的影响", impact,
-                  "", "👀 后续关注", "关注原发布机构的后续公告及相关官方市场数据。",
+                  "", "👀 后续关注", context["watch"],
                   "", f"🔗 官方原文：{item['url']}"]
         # No image link unless a separately verified official image is available.
     lines += ["", "===== 资讯助理 ====="]
