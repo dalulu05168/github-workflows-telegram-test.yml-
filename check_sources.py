@@ -5,6 +5,7 @@ import datetime as dt
 from pathlib import Path
 import feedparser
 import requests
+from rss_cache import save_feed
 
 SOURCES = json.loads((Path(__file__).parent / "config/sources.json").read_text(encoding="utf-8"))
 
@@ -20,6 +21,7 @@ def check_source(source, fetch=requests.get):
         recent_dates = sum(bool(e.get("published_parsed") or e.get("updated_parsed")) for e in feed.entries)
         if not recent_dates:
             return {"source": source["name"], "ok": False, "reason": "entries have no publication dates"}
+        save_feed(source["url"], response.content)
         dates = [dt.datetime.fromtimestamp(calendar.timegm(date), dt.timezone.utc)
                  for entry in feed.entries
                  if (date := (entry.get("published_parsed") or entry.get("updated_parsed")))]
