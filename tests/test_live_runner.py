@@ -38,6 +38,33 @@ class LiveRunnerTests(unittest.TestCase):
         indicators.assert_called_once()
         self.assertEqual(report['outcome'],'INDICATORS_DELIVERED')
 
+    def test_v1_unreviewed_news_is_held_not_sent_by_old_formatter(self):
+        now=dt.datetime(2026,10,19,4,30,tzinfo=dt.timezone.utc)
+        article={'title':'BVB official notice','summary':'Official announcement','url':'https://www.bvb.ro/news',
+                 'source':'BVB','source_url':'https://www.bvb.ro/rss','published':now,'regions':['RO'],'weight':5}
+        transport=StubTransport();report={}
+        with patch('content_pipeline.prepare_candidates',return_value=[]):
+            with patch('live_runner.format_digest',side_effect=AssertionError('must not use legacy template')):
+                self.assertFalse(run_live({**ENV,'NEWS_CONTENT_STANDARD':'ELLERY_WESTCOTT_NEWS_V1'},now,[article],
+                    lambda r,t:GitHubLedger(r,t,transport=transport),lambda _:self.fail('unreviewed send'),report))
+        self.assertEqual(report['markets']['RO']['status'],'AWAITING_CONTENT_REVIEW')
+
+    def test_v1_approved_copy_keeps_event_metadata_and_telegram_receipt(self):
+        now=dt.datetime(2026,10,19,4,30,tzinfo=dt.timezone.utc)
+        article={'title':'BVB official notice','summary':'Official announcement','url':'https://www.bvb.ro/news',
+                 'source':'BVB','source_url':'https://www.bvb.ro/rss','published':now,'regions':['RO'],'weight':5}
+        transport=StubTransport();report={};sent=[]
+        approved={'article':article,'article_id':'reviewed-id','message':'🌐 ELLERY WESTCOTT｜财经资讯快报\n已审核内容',
+                  'event':{'event_id':'reviewed-event','fact_fingerprints':['f1']}}
+        with patch('content_pipeline.prepare_candidates',return_value=[approved]):
+            self.assertTrue(run_live({**ENV,'NEWS_CONTENT_STANDARD':'ELLERY_WESTCOTT_NEWS_V1'},now,[article],
+                lambda r,t:GitHubLedger(r,t,transport=transport),lambda text:sent.append(text) or 77,report))
+        ledger=GitHubLedger('owner/repo','fake',transport=transport);ledger.load()
+        record=next(iter(ledger.slots.values()))
+        self.assertEqual(sent,[approved['message']])
+        self.assertEqual(record['content_events'],[approved['event']])
+        self.assertEqual(record['parts'][0]['telegram_message_id'],77)
+
     def test_missing_secrets_cannot_send(self):
         with self.assertRaises(RuntimeError):
             validate_live_env({"DRY_RUN": "false", "LIVE_APPROVED": "true"})

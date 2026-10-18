@@ -107,7 +107,7 @@ class GitHubLedger:
                 for key, data in self.slots.items() if key.startswith(region + ":")
                 for identifier in data["article_ids"]}
 
-    def claim(self, slot, article_ids, chunks, now):
+    def claim(self, slot, article_ids, chunks, now, content_events=None):
         """Persist the whole message BEFORE any Telegram request."""
         if slot in self.slots:
             return False
@@ -124,6 +124,11 @@ class GitHubLedger:
             "parts": [{"status": "pending", "text": text, "telegram_message_id": None}
                       for text in chunks],
         }
+        if content_events is not None:
+            if not isinstance(content_events,list) or any(not isinstance(event,dict) for event in content_events):
+                del self.slots[slot]
+                raise ValueError('Invalid content event metadata')
+            self.slots[slot]['content_events']=content_events
         self.save()
         return True
 

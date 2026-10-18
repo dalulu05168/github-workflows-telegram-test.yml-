@@ -74,6 +74,13 @@ class LedgerTests(unittest.TestCase):
         self.assertIn("digest1", second.claimed_articles("RO"))
         self.assertTrue(second.claim("FR:2026-10-19-morning", ["digest1"], ["fr"], self.NOW))
 
+    def test_content_event_is_persisted_with_first_claim_before_any_send(self):
+        transport=StubTransport();ledger=self.ledger(transport)
+        event={'event_id':'test-event','fact_fingerprints':['f1']}
+        ledger.claim('RO:2026-10-19-morning',['digest'],['message'],self.NOW,content_events=[event])
+        self.assertEqual(transport.sent,[])
+        self.assertEqual(self.ledger(transport).slots['RO:2026-10-19-morning']['content_events'],[event])
+
     def test_message_receipts_and_resume_from_persisted_state(self):
         transport = StubTransport()
         first = self.ledger(transport)

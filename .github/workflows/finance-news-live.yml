@@ -50,6 +50,7 @@ jobs:
       - name: Deliver eligible Chinese-translated news with persistent ledger
         env:
           ENABLE_MARKET_SNAPSHOTS: 'true'
+          NEWS_CONTENT_STANDARD: ELLERY_WESTCOTT_NEWS_V1
           WAKEUP_ORIGIN: ${{ github.event.inputs.trigger_origin || github.event_name }}
           DRY_RUN: 'false'
           LIVE_APPROVED: 'true'

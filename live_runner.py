@@ -42,6 +42,9 @@ def run_live(environment=None, now=None, articles=None,
     report["checked_at"] = now.isoformat()
     report["trigger"] = environment.get("GITHUB_EVENT_NAME", "local")
     report["trigger_origin"] = environment.get("WAKEUP_ORIGIN", report["trigger"])
+    if environment.get('NEWS_CONTENT_STANDARD') == 'ELLERY_WESTCOTT_NEWS_V1':
+        report['content_standard']='ELLERY_WESTCOTT_NEWS_V1'
+        report['content_generation']='REVIEWED_FILES_ONLY_NO_ANALYSIS_MODEL_CONFIGURED'
     active_slots = {}
     for region, market in MARKETS.items():
         local = now.astimezone(ZoneInfo(market["zone"]))
@@ -102,6 +105,10 @@ def run_live(environment=None, now=None, articles=None,
                 market_report["status"] = "BLOCKED_PRIOR_UNFINISHED_SLOT"
                 blocked.append(region)
                 continue
+            if (environment.get('NEWS_CONTENT_STANDARD') == 'ELLERY_WESTCOTT_NEWS_V1'
+                    and not ledger.slots[key].get('content_events')):
+                market_report['status']='LEGACY_PENDING_NEEDS_CONTENT_REVIEW'
+                continue
             try:
                 ledger.resume(key, sender)
             except DeliveryUncertain:
@@ -124,17 +131,28 @@ def run_live(environment=None, now=None, articles=None,
             market_report["failed_sources"] = failed_sources
             print(f"{region} {suffix}: {market_report['status']}; no send.")
             continue
+        reviewed = None
+        if environment.get('NEWS_CONTENT_STANDARD') == 'ELLERY_WESTCOTT_NEWS_V1':
+            from content_pipeline import prepare_candidates
+            reviewed = prepare_candidates(selected,region,now,ledger,report)
+            if not reviewed:
+                market_report['status']='AWAITING_CONTENT_REVIEW'
+                market_report['content_standard']='ELLERY_WESTCOTT_NEWS_V1'
+                continue
+            selected=[(entry['article'],entry['article_id']) for entry in reviewed]
         market_report["coverage"] = {
             "us_equity_events": sum(is_us_equity_event(item) for item,_ in selected),
             "us_events": sum(bool(us_event_context(item,region)) for item,_ in selected),
             "us_market_commentary": sum(is_us_market_commentary(item) for item,_ in selected),
             "local_market_items": sum(item.get("issuer_market")==region or region in item.get("regions",[]) and item.get("coverage")!="us_market" for item,_ in selected),
         }
-        message = format_digest(region, kind, [item for item, _ in selected], local, translator=translator)
+        message = ('\n\n──────────\n\n'.join(entry['message'] for entry in reviewed) if reviewed is not None
+                   else format_digest(region, kind, [item for item, _ in selected], local, translator=translator))
         chunks = split_telegram_message(message)
         article_ids = [digest for _, digest in selected]
         # Must persist before calling Telegram, including for multipart digests.
-        ledger.claim(key, article_ids, chunks, now)
+        ledger.claim(key, article_ids, chunks, now,
+                     content_events=[entry['event'] for entry in reviewed] if reviewed is not None else None)
         try:
             ledger.resume(key, sender)
         except DeliveryUncertain:
