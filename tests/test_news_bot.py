@@ -17,6 +17,13 @@ class SchedulingTests(unittest.TestCase):
         self.assertEqual(preview_slot(local, preview_all=True, dry_run=True)[0], "hourly")
         self.assertIsNone(preview_slot(local, preview_all=True, dry_run=False))
 
+    def test_delayed_morning_0759_not_missed(self):
+        for zone in ("Europe/Bucharest", "Europe/Paris"):
+            late = dt.datetime(2026, 10, 19, 7, 59, tzinfo=ZoneInfo(zone))
+            self.assertEqual(due_slot(late)[0], "morning")
+            hourly = late.replace(hour=8, minute=0)
+            self.assertEqual(due_slot(hourly)[0], "hourly")
+
     def test_hourly(self):
         self.assertIsNone(due_slot(dt.datetime(2026,10,18,7,10,tzinfo=ZoneInfo("Europe/Paris"))))
         self.assertEqual(due_slot(dt.datetime(2026,10,18,9,10,tzinfo=ZoneInfo("Europe/Paris")))[0],"hourly")
