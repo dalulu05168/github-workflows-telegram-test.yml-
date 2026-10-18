@@ -221,17 +221,25 @@ def format_digest(region, kind, chosen, local):
     lines += ["", "===== 资讯助理 ====="]
     return "\n".join(lines)
 
+def preview_slot(local, preview_all=False, dry_run=True):
+    """Preserve the scheduled digest type during a dry-run preview."""
+    slot = due_slot(local)
+    if preview_all and dry_run and slot is None:
+        return ("hourly", local.strftime("%Y-%m-%d-%H") + "-preview")
+    return slot
+
+
 def main():
     state = prune_sent_state(json.loads(STATE.read_text(encoding="utf-8")), NOW)
     articles = parse_news()
     updated = False
     for region, market in MARKETS.items():
         local = NOW.astimezone(ZoneInfo(market["zone"]))
-        slot = due_slot(local)
-        if os.getenv("PREVIEW_ALL", "false").lower() == "true" and os.getenv("DRY_RUN", "true").lower() != "false":
-            # Preview the actual morning digest during its due slot, not an hourly digest.
-            if slot is None:
-                slot = ("hourly", local.strftime("%Y-%m-%d-%H") + "-preview")
+        slot = preview_slot(
+            local,
+            preview_all=os.getenv("PREVIEW_ALL", "false").lower() == "true",
+            dry_run=os.getenv("DRY_RUN", "true").lower() != "false",
+        )
         if slot is None:
             continue
         kind, suffix = slot
