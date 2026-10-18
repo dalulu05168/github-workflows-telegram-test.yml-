@@ -25,5 +25,13 @@
       "FR"
     ],
     "weight": 3
+  },
+  {
+    "name": "BVB official market announcements",
+    "url": "https://www.bvb.ro/Rss/OperatiuniSiComunicateBVB.ashx",
+    "regions": [
+      "RO"
+    ],
+    "weight": 5
   }
 ]
