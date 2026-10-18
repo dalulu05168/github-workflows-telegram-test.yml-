@@ -1,0 +1,42 @@
+# 上线验收清单（2026-10-18）
+
+> **状态：未上线；DRY_RUN=true；不得将代码提交等同于测试通过。**
+
+## 已有代码与可核查证据
+
+- 工作流：`.github/workflows/finance-news.yml`，UTC 整点与半点调度；预览强制 `DRY_RUN: 'true'`，且不读取 Telegram secrets，GitHub token 为只读。
+- 罗马尼亚、法国独立模板：`news_bot.py`，包含新闻标题、发生了什么、当地市场影响、后续关注、官方原文；未经核实的原图不显示。
+- 条件性分析：`editorial.py`；不具备基于真实行情的因果验证。
+- 来源：美联储、ECB、BLS，以及 BVB 官网 RSS 页面所列的市场操作与公告 RSS。BVB 入口来源：<https://www.bvb.ro/Services/DataVending/ForProfessionals>。**入口由官网确认，但本项目尚未证实 RSS 在 GitHub Actions 中能成功抓取并提供近期新闻。**
+- INSEE 官方提供 RSS 订阅页：<https://www.insee.fr/fr/information/2381941>，但未核实可供本程序直接抓取的 RSS 终端地址，**故未配置**。
+- BNR 和 Euronext Paris 尚无经验证可用的新闻 RSS 配置。
+
+## 本轮本地验证的严格范围
+
+- 独立复现了 Telegram 拆分函数，并运行 4 项离线 Python 测试：新闻边界、超长单条新闻、普通长行、非法限制值，均通过。
+- **没有**在本地成功安装 `feedparser`，因为运行环境无法访问软件包索引；因此没有运行仓库完整测试套件。
+- **没有**获取当前最新 GitHub Actions 运行日志，不能声称该提交的 CI 通过。
+- **没有**进行真实 Telegram 发送，也没有验证官方 RSS 实际响应、发布时间或新闻覆盖率。
+
+## 上线前必须满足（目前均未全部通过）
+
+1. 最新 GitHub Actions `Run tests` 步骤成功，且保存可核查的运行链接。
+2. `Check RSS source health` 输出各来源的有效性、最近一篇发布时间、是否超过 72 小时；周末和节假日应按真实发布频率判断，不可仅凭 72 小时判定故障。
+3. BVB RSS 实际解析成功；法国至少接入一个经核实的本地官方来源；BNR/INSEE/Euronext 优先，但不能猜测 URL。
+4. 按实际样本核对每国晨报、小时快报的数量、时效、来源、分析和图片，验证不虚构数据。
+5. 在夏令时与冬令时分别测试 07:30 本地晨报和各交易所开盘窗口；节假日须有交易日历，不得把时钟提示当作真实开市。
+6. 完成**跨次运行持久化**与**多段消息部分成功后重试**的幂等测试。当前工作流持久化步骤明确禁用，且没有 exactly-once 发送保证。
+7. 在用户批准后，通过 GitHub Secrets 配置 `TELEGRAM_BOT_TOKEN`、`TELEGRAM_CHAT_ID`，先测试群组接收、无 Topic、分国消息，再决定正式上线。**不要在聊天中提供 Token。**
+8. 只有用户明确批准并且上述条件达标，才能把 `DRY_RUN` 改为 `false`；当前不允许启用。
+
+## 复现测试
+
+```bash
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
+python check_sources.py
+python news_coverage.py
+DRY_RUN=true PREVIEW_ALL=true python news_bot.py
+```
+
+所有命令均可在 GitHub Actions 日志中单独查看。注意：命令被写入文档**不代表它们已经成功执行**。
