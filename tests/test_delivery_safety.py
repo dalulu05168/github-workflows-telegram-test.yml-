@@ -20,7 +20,7 @@ class DeliverySafetyTests(unittest.TestCase):
                 post.assert_not_called()
 
     def test_live_mode_requires_secrets(self):
-        with patch.dict("os.environ", {"DRY_RUN": "false"}, clear=True):
+        with patch.dict("os.environ", {"DRY_RUN": "false", "LIVE_APPROVED": "true"}, clear=True):
             with patch("news_bot.requests.post") as post:
                 self.assertFalse(news_bot.telegram_send("test"))
                 post.assert_not_called()
@@ -36,7 +36,7 @@ class DeliverySafetyTests(unittest.TestCase):
 
     def test_single_live_message_uses_one_request(self):
         with patch.dict("os.environ", {
-            "DRY_RUN": "false", "TELEGRAM_BOT_TOKEN": "fake", "TELEGRAM_CHAT_ID": "-1"
+            "DRY_RUN": "false", "LIVE_APPROVED": "true", "TELEGRAM_BOT_TOKEN": "fake", "TELEGRAM_CHAT_ID": "-1"
         }, clear=True):
             with patch("news_bot.requests.post") as post:
                 post.return_value.json.return_value = {"ok": True}
