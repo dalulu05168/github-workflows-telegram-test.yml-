@@ -3,15 +3,20 @@ export const REPOSITORY = 'dalulu05168/github-workflows-telegram-test.yml-';
 export const WORKFLOW = 'finance-news-live.yml';
 export const WORKER_NAME = 'telegram-finance-news-wakeup';
 const CRON = '*/10 * * * *';
-const formatters = Object.entries({ RO:'Europe/Bucharest', FR:'Europe/Paris' }).map(([region,timeZone]) => [region,new Intl.DateTimeFormat('en-GB',{timeZone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'})]);
+const formatters = Object.entries({ RO:'Europe/Bucharest', FR:'Europe/Paris', US:'America/New_York' }).map(([region,timeZone]) => [region,new Intl.DateTimeFormat('en-GB',{timeZone,weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'})]);
 const pending = new Set(['queued','in_progress','waiting','pending','requested']);
 
 export function publicationWindows(now) {
-  return formatters.filter(([,formatter]) => {
+  return formatters.filter(([region,formatter]) => {
     const parts = formatter.formatToParts(now);
     const hour = Number(parts.find(x => x.type==='hour').value);
     const minute = Number(parts.find(x => x.type==='minute').value);
-    return hour>=7 && minute>=30;
+    const weekday = parts.find(x => x.type==='weekday').value;
+    const clock = hour*60+minute;
+    const targets = {RO:[585,615],FR:[525,555],US:[555,585]}[region];
+    const indicator = !['Sat','Sun'].includes(weekday) && targets.some(t => clock>=t && clock<t+15);
+    // Holiday decisions stay in the Python exchange calendar, not this wakeup.
+    return (region!=='US' && hour>=7 && minute>=30) || indicator;
   }).map(([region]) => region);
 }
 
@@ -73,6 +78,6 @@ export default {
     try {lastScheduled=env.STATUS ? await env.STATUS.get('last_scheduled',{type:'json'}) : null;}
     catch {return Response.json({service:WORKER_NAME,error:'STATUS_STORAGE_UNAVAILABLE'},{status:503,headers:{'Cache-Control':'no-store'}});}
     const configured=Boolean(env.GITHUB_DISPATCH_TOKEN?.trim() && env.STATUS);
-    return Response.json({service:WORKER_NAME,configured,cron:CRON,timezones:['Europe/Bucharest','Europe/Paris'],revision:env.DEPLOYMENT_REVISION||'not-specified',last_scheduled:lastScheduled,note:'Accepted dispatch is not a Telegram delivery receipt.'},{status:configured?200:503,headers:{'Cache-Control':'no-store'}});
+    return Response.json({service:WORKER_NAME,configured,cron:CRON,timezones:['Europe/Bucharest','Europe/Paris','America/New_York'],revision:env.DEPLOYMENT_REVISION||'not-specified',last_scheduled:lastScheduled,note:'Accepted dispatch is not a Telegram delivery receipt.'},{status:configured?200:503,headers:{'Cache-Control':'no-store'}});
   },
 };

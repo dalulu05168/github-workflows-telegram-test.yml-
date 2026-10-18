@@ -28,6 +28,16 @@ class LiveRunnerTests(unittest.TestCase):
                     ledger.assert_not_called()
                     parser.assert_not_called()
 
+    def test_indicator_only_window_runs_without_reading_rss(self):
+        now=dt.datetime(2026,10,19,7,20,tzinfo=dt.timezone.utc)
+        transport=StubTransport(); report={}
+        env={**ENV,'ENABLE_MARKET_SNAPSHOTS':'true'}
+        with patch('market_snapshots.deliver_snapshots',return_value=True) as indicators:
+            with patch('live_runner.parse_news', side_effect=AssertionError('no hourly news due')):
+                self.assertTrue(run_live(env,now,None,lambda r,t:GitHubLedger(r,t,transport=transport),lambda _:1,report))
+        indicators.assert_called_once()
+        self.assertEqual(report['outcome'],'INDICATORS_DELIVERED')
+
     def test_missing_secrets_cannot_send(self):
         with self.assertRaises(RuntimeError):
             validate_live_env({"DRY_RUN": "false", "LIVE_APPROVED": "true"})

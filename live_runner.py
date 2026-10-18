@@ -47,7 +47,12 @@ def run_live(environment=None, now=None, articles=None,
         local = now.astimezone(ZoneInfo(market["zone"]))
         active_slots[region] = due_slot(local)
         report["markets"][region] = {"local_time":local.isoformat(), "status":"PENDING" if active_slots[region] else "OUTSIDE_WINDOW"}
-    if not any(active_slots.values()):
+    indicators_enabled = environment.get('ENABLE_MARKET_SNAPSHOTS','false').lower() == 'true'
+    indicators_due = False
+    if indicators_enabled:
+        from market_snapshots import due_snapshots
+        indicators_due = bool(due_snapshots(now))
+    if not any(active_slots.values()) and not indicators_due:
         report["outcome"] = "OUTSIDE_DELIVERY_WINDOWS"
         print("Outside all delivery windows; no RSS, ledger or Telegram requests.")
         return False
@@ -64,12 +69,18 @@ def run_live(environment=None, now=None, articles=None,
         ledger.save()
         print("Delivery ledger initialized; no messages claimed or sent.")
     ledger.prune(now)
-    # Do not pull RSS until the controlled delivery mode and ledger are verified.
-    if articles is None:
-        articles = parse_news(diagnostics=report["source_diagnostics"])
     sender = telegram_sender or (
         lambda text: send_telegram_part(bot_token, chat_id, text))
     any_sent = False
+    if indicators_due:
+        from market_snapshots import deliver_snapshots
+        any_sent = deliver_snapshots(now,ledger,sender,report)
+    if not any(active_slots.values()):
+        report['outcome'] = 'INDICATORS_DELIVERED' if any_sent else 'NO_DELIVERY'
+        return any_sent
+    # Do not pull RSS until the controlled delivery mode and ledger are verified.
+    if articles is None:
+        articles = parse_news(diagnostics=report["source_diagnostics"])
     blocked = []
     translator = FreeTranslator()
     for region, market in MARKETS.items():

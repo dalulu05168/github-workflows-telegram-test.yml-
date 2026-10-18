@@ -49,6 +49,7 @@ jobs:
           python -m unittest discover -s tests -v
       - name: Deliver eligible Chinese-translated news with persistent ledger
         env:
+          ENABLE_MARKET_SNAPSHOTS: 'true'
           WAKEUP_ORIGIN: ${{ github.event.inputs.trigger_origin || github.event_name }}
           DRY_RUN: 'false'
           LIVE_APPROVED: 'true'

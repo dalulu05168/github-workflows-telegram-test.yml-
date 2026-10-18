@@ -17,6 +17,13 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python preflight.py
       - run: python -m unittest discover -s tests -v
+      - name: Read-only live market data availability probe (no Telegram send)
+        run: python probe_market_snapshots.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: market-data-availability
+          path: reports/market-data-probe.json
+          retention-days: 7
 
   cloud-wakeup:
     runs-on: ubuntu-latest

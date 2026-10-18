@@ -7,6 +7,14 @@ const env = { GITHUB_DISPATCH_TOKEN: 'fake-test-secret', DEPLOYMENT_REVISION: 't
 const json = data => new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
 const completed = created_at => ({ status: 'completed', created_at });
 
+test('cash market post-open and US pre-open indicator windows wake the runner', () => {
+  assert.deepEqual(publicationWindows(new Date('2026-10-19T07:20:00Z')), ['RO','FR']);
+  assert.deepEqual(publicationWindows(new Date('2026-10-19T13:20:00Z')), ['US']);
+  assert.deepEqual(publicationWindows(new Date('2026-10-26T13:20:00Z')), ['US']);
+  assert.deepEqual(publicationWindows(new Date('2026-11-02T14:20:00Z')), ['US']);
+  assert.deepEqual(publicationWindows(new Date('2026-10-18T07:20:00Z')), []);
+});
+
 test('Romanian and French summer opening windows preserve existing schedule', () => {
   assert.deepEqual(publicationWindows(new Date('2026-10-18T04:29:00Z')), []);
   assert.deepEqual(publicationWindows(new Date('2026-10-18T04:30:00Z')), ['RO']);
