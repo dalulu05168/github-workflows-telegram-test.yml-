@@ -147,10 +147,29 @@ class LedgerTests(unittest.TestCase):
         with self.assertRaises(DeliveryUncertain):
             send_telegram_part("fake", "-1", "part", transport=transport)
 
+    def test_pruning_never_discards_unresolved_old_delivery(self):
+        transport = StubTransport()
+        ledger = self.ledger(transport)
+        ledger.claim("RO:2026-09-10-08", ["unknown"], ["part"], self.NOW)
+        ledger.prune(self.NOW)
+        self.assertIn("RO:2026-09-10-08", ledger.slots)
+        self.assertEqual(ledger.unfinished_slots("RO"), ["RO:2026-09-10-08"])
+
+    def test_telegram_transport_error_does_not_expose_bot_token(self):
+        transport = StubTransport()
+        transport.post = Mock(side_effect=requests.Timeout(
+            "HTTPSConnectionPool(host='api.telegram.org', url='/botSUPERSECRET/sendMessage')"))
+        with self.assertRaises(DeliveryUncertain) as caught:
+            send_telegram_part("SUPERSECRET", "-1", "part", transport=transport)
+        self.assertNotIn("SUPERSECRET", str(caught.exception))
+        self.assertIsNone(caught.exception.__cause__)
+        self.assertIsNone(caught.exception.__context__ if caught.exception.__suppress_context__ else None)
+
     def test_pruning_retains_current_and_drops_old(self):
         transport = StubTransport()
         ledger = self.ledger(transport)
         ledger.claim("RO:2026-09-10-08", ["old"], ["old"], self.NOW)
+        ledger.resume("RO:2026-09-10-08", lambda _: 101)
         ledger.claim("RO:2026-10-19-08", ["new"], ["new"], self.NOW)
         ledger.prune(self.NOW)
         self.assertNotIn("RO:2026-09-10-08", ledger.slots)
