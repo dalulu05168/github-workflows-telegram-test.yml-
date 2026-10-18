@@ -15,8 +15,8 @@ def relevant(article):
         'alegeri','parlament','partid','protest','trump','putin','election','political','politics')):
         return False
     text=title+' '+plain(article.get('summary',''))
-    terms=('bvb','bet','bursa','capitalizare','actiuni','dobanda','inflatie','banca','bancar',
-           'dividend','profit','venituri','financiar','economie','pib','investitii','rezultate',
+    terms=('bvb','bet','bursa','capitalizare','capitalizarea','actiuni','actiunilor','dobanda','dobanzi','inflatie','inflatia','banca','banci','bancar',
+           'dividend','dividende','profit','profitul','venituri','financiar','financiare','economia','pib','investitii','investitiile',
            'stock','shares','earnings','revenue','inflation','interest rate','treasury',
-           'semiconductor','oil','gas','energy','bank','cfo','financial','gdp','euro')
-    return any(re.search(r'(?<!\w)'+re.escape(word)+r'\w*',text) for word in terms)
+           'semiconductor','oil','gas','energy','bank','cfo','financial','gdp')
+    return any(re.search(r'(?<!\w)'+re.escape(word)+r'(?!\w)',text) for word in terms)

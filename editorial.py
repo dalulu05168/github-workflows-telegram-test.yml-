@@ -39,6 +39,11 @@ def editorial_context(article, region):
     us_context = us_event_context(article, region)
     if us_context:
         return dict(us_context, major=is_major(article))
+    if re.search(r"(?<!\w)esma(?!\w)", content):
+        return {"topic": "eu_regulation", "major": False,
+                "headline": "欧洲金融市场监管改革进展",
+                "impact": "报道提到的监管调整，如最终实施，可能改变跨境投资服务的监管方式和投资者保护要求；不等于投资收益或账户保障立即提高。",
+                "watch": "核对 ESMA 和欧盟的正式文件、生效时间、适用范围，以及开户平台是否需要调整服务条款。"}
     if region == "RO" and any(term in content for term in ("capitalizare", "bucharest stock exchange", "bursa de la bucure")):
         return {"topic": "ro_market", "major": False,
                 "impact": "这类报道可以帮助观察本地市场的整体变化，但总市值增加不等于同等金额的新资金流入，也不代表每只股票都上涨。",

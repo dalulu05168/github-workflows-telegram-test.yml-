@@ -33,6 +33,7 @@ class ReliableNewsTests(unittest.TestCase):
  def test_newspaper_off_topic_and_political_commentary_excluded(self):
   self.assertEqual(n.select_articles([item('VIDEO rampa de urgenta pentru camioane',summary='Accidente de trafic')],'RO',set(),'hourly',NOW),[])
   self.assertEqual(n.select_articles([item('Alegeri: partid politic si parlament',summary='Politica')],'RO',set(),'hourly',NOW),[])
+  self.assertEqual(n.select_articles([item('Vinted: anunturile vizibile in trei tari europene', summary='Vanzatorii pot vinde haine in Europa')],'RO',set(),'hourly',NOW),[])
   self.assertEqual(len(n.select_articles([item()],'RO',set(),'hourly',NOW)),1)
  def test_source_failure_not_claimed_as_no_news(self):
   transport=StubTransport();report={}

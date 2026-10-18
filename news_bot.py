@@ -292,7 +292,7 @@ def format_digest(region, kind, chosen, local, translator=None):
                 translation_note = "；中文翻译暂不可用，以下保留来源原文"
         context = editorial_context(item, region)
         attribution = ("｜作者/供稿：" + item["author"]) if item.get("author") else ""
-        lines += ["", f"{number}. {title}", "",
+        lines += ["", f"{number}. {context.get('headline', title)}", "",
                   summary or "来源目前只提供标题，详细内容仍需查阅原文。",
                   "", "可能影响：" + context["impact"],
                   "", "值得关注：" + context["watch"],
