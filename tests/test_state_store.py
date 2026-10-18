@@ -21,6 +21,10 @@ class StateStoreTests(unittest.TestCase):
                              {"FR:2026-10-18-09": ["second"]})
             self.assertEqual(sorted(p.name for p in Path(directory).iterdir()), ["sent.json"])
 
+    def test_non_string_key_does_not_crash(self):
+        now = dt.datetime(2026, 10, 18, tzinfo=dt.timezone.utc)
+        self.assertEqual(prune_sent_state({None: ["x"], 123: ["y"]}, now), {})
+
     def test_drops_old_and_invalid(self):
         now=dt.datetime(2026,10,18,tzinfo=dt.timezone.utc)
         state={"RO:2026-09-01-08":["old"],"FR:invalid":["x"],"US:2026-10-18":["y"]}
