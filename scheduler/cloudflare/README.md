@@ -14,6 +14,8 @@
 
 GitHub 细粒度令牌到期前须在这个 Secret 中更新，否则云端唤醒会报告授权失败。Cloudflare 令牌如果设有到期日，同样需要维护。
 
+**更换 GitHub 令牌后，必须再次运行 `Deploy Cloudflare news wakeup` 同步令牌。** 仅更新仓库的 `CLOUDFLARE_GITHUB_TOKEN` 不会自动替换 Cloudflare Worker 中已有的 `GITHUB_DISPATCH_TOKEN`。顺序是：更新仓库 Secret → 重新部署成功 → 查看下一次自然 Cron 的结果；部署成功不等于 Telegram 已送达。若只修改原令牌权限且令牌值未变，无需更换令牌内容，但仍应核对自然触发是否成功。
+
 首次使用 Cloudflare Workers 时，先在控制台启用 Workers 并确认已有 `workers.dev` 子域名。本方案不要求购买域名或服务器。
 
 配置完成后，运行 GitHub Actions 中的 **Deploy Cloudflare news wakeup**（仅手动运行，使用 main 分支）。配置检查会明确列出缺失项，不会把未部署说成部署成功。
