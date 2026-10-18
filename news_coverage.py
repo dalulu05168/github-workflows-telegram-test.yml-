@@ -39,7 +39,40 @@ def report(articles, now, diagnostics=None):
         }
     return output
 
+def markdown_summary(data):
+    """Concise Actions run summary, distinct from live news delivery."""
+    lines = [
+        "## Finance news coverage — DRY RUN",
+        "",
+        "| Market | 6h candidates | Morning window | Morning candidates | Hourly selected | Morning selected |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for region in ("RO", "FR"):
+        item = data["regions"][region]
+        lines.append(
+            f"| {region} | {item['available_6h']} | "
+            f"{item['morning_window_hours']}h | {item['available_morning_window']} | "
+            f"{item['selected_hourly']} | {item['selected_morning']} |"
+        )
+    lines.extend(["", "### Source diagnostics",
+                  "", "| Source | Feed entries | Accepted within 96h | Old | Invalid links/titles | Error |",
+                  "|---|---:|---:|---:|---:|---|"])
+    for item in data.get("feed_diagnostics", []):
+        source = item["source"].replace("|", "/")
+        error = (item.get("error") or "-").replace("|", "/").replace("\n", " ")
+        lines.append(f"| {source} | {item['entries']} | {item['accepted']} | "
+                     f"{item['outside_96h']} | {item['invalid_official_link_or_title']} | {error} |")
+    lines.extend(["", "Successful workflow does not imply every feed is healthy or Telegram was sent."])
+    return "\n".join(lines) + "\n"
+
+
 if __name__ == "__main__":
     diagnostics = []
     articles = parse_news(diagnostics=diagnostics)
-    print(json.dumps(report(articles, NOW, diagnostics), ensure_ascii=False, indent=2))
+    data = report(articles, NOW, diagnostics)
+    print(json.dumps(data, ensure_ascii=False, indent=2))
+    import os
+    from pathlib import Path
+    if os.getenv("GITHUB_STEP_SUMMARY"):
+        with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as output:
+            output.write(markdown_summary(data))
