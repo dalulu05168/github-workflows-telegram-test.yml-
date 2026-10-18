@@ -188,7 +188,7 @@ def format_digest(region, kind, chosen, local):
     for item in chosen:
         published = item["published"].astimezone(ZoneInfo(market["zone"]))
         summary = item.get("summary", "").strip()
-        facts = summary if summary else "官方来源仅提供标题，详细事实请查阅原文。"
+        facts = ("官方原文摘要（未翻译）： " + summary) if summary else "官方来源仅提供标题，详细事实请查阅原文。"
         context = editorial_context(item, region)
         impact = context["impact"]
         lines += ["", ("🔴" if context["major"] else "🔵") + " " + market["flag"] + " " + market["name"] + "｜财经资讯快报",
