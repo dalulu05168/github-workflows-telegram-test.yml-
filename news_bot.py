@@ -229,7 +229,9 @@ def main():
         local = NOW.astimezone(ZoneInfo(market["zone"]))
         slot = due_slot(local)
         if os.getenv("PREVIEW_ALL", "false").lower() == "true" and os.getenv("DRY_RUN", "true").lower() != "false":
-            slot = ("hourly", local.strftime("%Y-%m-%d-%H") + "-preview")
+            # Preview the actual morning digest during its due slot, not an hourly digest.
+            if slot is None:
+                slot = ("hourly", local.strftime("%Y-%m-%d-%H") + "-preview")
         if slot is None:
             continue
         kind, suffix = slot
