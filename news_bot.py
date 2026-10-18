@@ -105,6 +105,7 @@ def select_articles(articles, region, already, kind, now):
     max_hours = (72 if local.weekday() == 0 else 18) if kind == "morning" else 6
     candidates = sorted(
         (item for item in articles if relevant(item) and region in item["regions"]
+         and (not item.get("financial_news_only") or editorial_context(item,region)["topic"] != "other")
          and 0 <= (now - item["published"]).total_seconds() <= max_hours * 3600
          and (item.get("coverage") != "us_market" or us_event_context(item, region))),
         key=lambda item: rank(item, region), reverse=True,

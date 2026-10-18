@@ -68,4 +68,8 @@ class CountryRoutingTests(unittest.TestCase):
    text=format_digest(region,'hourly',[],NOW)
    self.assertIn(country+'＋🇺🇸 美国相关事件',text)
 
+ def test_generic_financial_newspaper_story_without_target_market_channel_is_not_filler(self):
+  a={'title':'Japanese enterprise offers modern apartments to employees','summary':'The Japanese entreprise builds residences for its employees.','published':NOW,'source':'BFM','source_url':'https://www.bfmtv.com/rss/economie/','url':'https://www.bfmtv.com/economie/story','regions':['FR'],'weight':4,'source_kind':'publisher','financial_news_only':True}
+  self.assertEqual(select_articles([a],'FR',set(),'hourly',NOW),[])
+
 if __name__=='__main__':unittest.main()
