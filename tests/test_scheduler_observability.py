@@ -11,7 +11,7 @@ class SchedulerObservability(unittest.TestCase):
         preview=(ROOT/'.github/workflows/finance-news.yml').read_text()
         formal=(ROOT/'.github/workflows/finance-news-live.yml').read_text()
         self.assertNotIn('  schedule:',preview)
-        self.assertIn("7,17,27,37,47,57 * * * *",formal)
+        self.assertIn("8,18,28,38,48,58 * * * *",formal)
         self.assertIn('GITHUB_STEP_SUMMARY',formal)
         self.assertIn('actions/upload-artifact@v4',formal)
     def test_outside_all_slots_does_not_fetch_or_write(self):

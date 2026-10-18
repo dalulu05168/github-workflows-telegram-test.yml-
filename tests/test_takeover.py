@@ -87,7 +87,7 @@ class TakeoverTests(unittest.TestCase):
         base = Path(__file__).resolve().parents[1]
         live = (base / ".github/workflows/finance-news-live.yml").read_text()
         preview = (base / ".github/workflows/finance-news.yml").read_text()
-        self.assertIn("cron: '7,17,27,37,47,57 * * * *'", live)
+        self.assertIn("cron: '8,18,28,38,48,58 * * * *'", live)
         self.assertNotIn("NEWS_LIVE_ENABLED", live)
         self.assertNotIn("confirmation", live)
         self.assertIn("github.ref == 'refs/heads/main'", live)

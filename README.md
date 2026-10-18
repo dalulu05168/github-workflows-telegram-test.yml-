@@ -18,7 +18,7 @@
 ## 运行方式
 
 - `finance-news.yml`：抓取、测试和预览，始终 `DRY_RUN=true`、只读权限、无 Telegram 密钥。
-- `finance-news-live.yml`：正式发送入口，每小时UTC第7、17、27、37、47、57分钟唤醒，无额外启用变量。只允许 main 分支；也可手动运行。
+- `finance-news-live.yml`：正式发送入口，每小时UTC第8、18、28、38、48、58分钟唤醒，无额外启用变量。只允许 main 分支；也可手动运行。
 - 两国分别按当地时间 07:30 晨报，此后 08:30、09:30……每小时筛选快报，允许在当小时后半小时内延迟启动；正式入口每10分钟错峰唤醒，晨报与小时快报的发布窗口仍由两国当地时间判断。周一晨报回看 72 小时，其他晨报 18 小时，快报 6 小时。GitHub 调度可能延迟，不保证准点送达。
 - 无合格新闻不发送。法国与罗马尼亚独立选稿、去重，同一新闻可以分别向两国发布。
 
@@ -71,6 +71,10 @@ DRY_RUN=true PREVIEW_ALL=true RSS_CACHE_DIR=.rss-cache python news_bot.py
 
 ## 调度修复（2026-10-18）
 
-只有正式finance-news-live.yml保留定时，预览工作流仅提交或手动触发。正式任务在UTC第7、17、27、37、47、57分钟唤醒，避开整点负载；当地07:30晨报及08:30起每小时快报的窗口不变。每窗口有多个唤醒机会，已发送由持久账本去重；没有新闻不发送，未知发送结果仍要求人工对账。GitHub Actions不保证准点执行；cron更新不等于自然定时已经恢复，须查event=schedule运行证据。
+只有正式finance-news-live.yml保留定时，预览工作流仅提交或手动触发。正式任务在UTC第8、18、28、38、48、58分钟唤醒，避开整点负载；当地07:30晨报及08:30起每小时快报的窗口不变。每窗口有多个唤醒机会，已发送由持久账本去重；没有新闻不发送，未知发送结果仍要求人工对账。GitHub Actions不保证准点执行；cron更新不等于自然定时已经恢复，须查event=schedule运行证据。
 
 每次正式运行的Summary及news-delivery-status运行附件包含分国状态：OUTSIDE_WINDOW、NO_ELIGIBLE_NEWS、ALREADY_RECORDED、BLOCKED_PRIOR_UNFINISHED_SLOT、DELIVERY_UNCERTAIN、SENT/SENT_RESUMED。来源错误单独记录；工作流成功不代表已经送达。启动依赖或测试失败也会显示尚未开始投递。非时段不抓RSS、不写账本、不访问Telegram。
+
+## 调度兜底
+
+若GitHub自然schedule没有事件，`scheduler/windows/`提供免费的本机备用触发脚本；只有用户安装后才会生效，电脑需开机、已登录且联网。它只调用现有正式工作流，不存Telegram密钥，不放宽选稿规则；已有运行或最近检查会跳过。`telegram-readonly-health.yml`仅核对机器人身份与目标权限，不发送任何消息，不能冒充真实送达验收。
