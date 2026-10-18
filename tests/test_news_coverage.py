@@ -1,8 +1,21 @@
 import datetime as dt
 import unittest
-from news_coverage import report
+from news_coverage import report, source_audit
 
 class CoverageTests(unittest.TestCase):
+    def test_missing_local_sources_are_disclosed(self):
+        sources=[{"name":"ECB","url":"https://www.ecb.europa.eu/rss/press.html","regions":["RO","FR"]}]
+        audit=source_audit(sources)
+        self.assertEqual(audit["RO"]["configured_local_sources"],[])
+        self.assertEqual(audit["FR"]["configured_local_sources"],[])
+        self.assertFalse(audit["RO"]["local_coverage_verified"])
+
+    def test_local_domain_configuration_is_detected_not_verified(self):
+        sources=[{"name":"BNR","url":"https://www.bnr.ro/example","regions":["RO"]}]
+        audit=source_audit(sources)
+        self.assertEqual(audit["RO"]["configured_local_sources"],["BNR"])
+        self.assertFalse(audit["RO"]["local_coverage_verified"])
+
     def test_empty_sources_are_reported(self):
         now=dt.datetime(2026,10,18,12,tzinfo=dt.timezone.utc)
         result=report([],now)
