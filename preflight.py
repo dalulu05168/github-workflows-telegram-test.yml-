@@ -18,14 +18,15 @@ def inspect(base=BASE):
             errors.append(f"source #{index}: must be a JSON object")
             continue
         name = source.get("name", f"source #{index}")
-        parsed = urlparse(source.get("url", ""))
+        url = source.get("url", "")
+        parsed = urlparse(url if isinstance(url, str) else "")
         if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
             errors.append(f"{name}: RSS URL must be HTTPS without embedded credentials")
         regions = source.get("regions")
         if not isinstance(regions, list) or not regions or any(
                 not isinstance(region, str) or region not in ALLOWED for region in regions):
             errors.append(f"{name}: invalid region configuration")
-        if not isinstance(source.get("weight"), int) or source["weight"] < 1:
+        if type(source.get("weight")) is not int or source["weight"] < 1:
             errors.append(f"{name}: invalid source weight")
     workflow = (base / ".github/workflows/finance-news.yml").read_text(encoding="utf-8")
     if "DRY_RUN: 'true'" not in workflow:
@@ -42,12 +43,13 @@ def inspect(base=BASE):
     for source in sources:
         if not isinstance(source, dict) or not isinstance(source.get("regions"), list):
             continue
-        host = (urlparse(source.get("url", "")).hostname or "").lower()
+        url = source.get("url", "")
+        host = (urlparse(url if isinstance(url, str) else "").hostname or "").lower()
         for region in source["regions"]:
             if region not in ALLOWED:
                 continue
             if any(host == domain or host.endswith("." + domain) for domain in local_domains[region]):
-                hosts[region].append(source["name"])
+                hosts[region].append(source.get("name", "unnamed source"))
     for region in sorted(ALLOWED):
         if not hosts[region]:
             warnings.append(f"{region}: no configured local official source")
