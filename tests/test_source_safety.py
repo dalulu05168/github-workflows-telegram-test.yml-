@@ -1,6 +1,6 @@
 import datetime as dt
 import unittest
-from news_bot import official_url, select_articles, parse_news
+from news_bot import official_url, select_articles, parse_news, resolve_official_link
 from unittest.mock import Mock, patch
 
 class SourceSafetyTests(unittest.TestCase):
@@ -52,6 +52,16 @@ class SourceSafetyTests(unittest.TestCase):
         self.assertEqual(diagnostics[0]["outside_96h"], 1)
         self.assertEqual(diagnostics[0]["invalid_official_link_or_title"], 1)
         self.assertEqual(diagnostics[0]["missing_date"], 1)
+
+    def test_relative_bvb_links_stay_on_official_domain(self):
+        feed = "https://www.bvb.ro/Rss/OperatiuniSiComunicateBVB.ashx"
+        self.assertEqual(resolve_official_link("/FinancialInstruments/notice", feed),
+                         "https://www.bvb.ro/FinancialInstruments/notice")
+        self.assertEqual(resolve_official_link("FinancialInstruments/notice", feed),
+                         "https://www.bvb.ro/FinancialInstruments/notice")
+        for hostile in ("//evil.example/news", "http://evil.example",
+                        "javascript:alert(1)", "", "/\\\\evil.example/path"):
+            self.assertEqual(resolve_official_link(hostile, feed), "")
 
     def test_country_specific_deduplication(self):
         now=dt.datetime(2026,10,18,10,tzinfo=dt.timezone.utc)
