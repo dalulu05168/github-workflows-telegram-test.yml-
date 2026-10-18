@@ -2,6 +2,9 @@ import datetime as dt
 import unittest
 from news_bot import official_url, select_articles, parse_news, resolve_official_link
 from unittest.mock import Mock, patch
+import os
+from tempfile import TemporaryDirectory
+from rss_cache import save_feed
 
 class SourceSafetyTests(unittest.TestCase):
     def test_official_domains(self):
@@ -52,6 +55,25 @@ class SourceSafetyTests(unittest.TestCase):
         self.assertEqual(diagnostics[0]["outside_96h"], 1)
         self.assertEqual(diagnostics[0]["invalid_official_link_or_title"], 1)
         self.assertEqual(diagnostics[0]["missing_date"], 1)
+
+    def test_preview_reuses_cached_feed_without_network_request(self):
+        now = dt.datetime(2026, 10, 19, 5, tzinfo=dt.timezone.utc)
+        feed = {"name": "BVB", "url": "https://www.bvb.ro/rss/example.xml",
+                "regions": ["RO"], "weight": 5}
+        document = (b'<rss version="2.0"><channel><title>BVB</title>'
+                    b'<item><title>Verified notice</title>'
+                    b'<link>https://www.bvb.ro/notice</link>'
+                    b'<pubDate>Mon, 19 Oct 2026 04:00:00 GMT</pubDate>'
+                    b'</item></channel></rss>')
+        with TemporaryDirectory() as directory:
+            with patch.dict(os.environ, {"RSS_CACHE_DIR": directory}):
+                save_feed(feed["url"], document)
+                with patch("news_bot.NOW", now), patch("news_bot.SOURCES", [feed]):
+                    with patch("news_bot.requests.get") as request:
+                        articles = parse_news()
+                        request.assert_not_called()
+        self.assertEqual(len(articles), 1)
+        self.assertEqual(articles[0]["title"], "Verified notice")
 
     def test_relative_bvb_links_stay_on_official_domain(self):
         feed = "https://www.bvb.ro/Rss/OperatiuniSiComunicateBVB.ashx"
