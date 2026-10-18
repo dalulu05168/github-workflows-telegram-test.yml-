@@ -18,8 +18,17 @@
     "weight": 4
   },
   {
-    "name": "US BLS",
-    "url": "https://www.bls.gov/feed/news_release/rss.xml",
+    "name": "US BLS Consumer Price Index",
+    "url": "https://www.bls.gov/feed/cpi.rss",
+    "regions": [
+      "RO",
+      "FR"
+    ],
+    "weight": 3
+  },
+  {
+    "name": "US BLS Employment Situation",
+    "url": "https://www.bls.gov/feed/empsit.rss",
     "regions": [
       "RO",
       "FR"
