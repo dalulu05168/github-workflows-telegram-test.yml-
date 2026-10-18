@@ -1,0 +1,30 @@
+name: Telegram one real news proof (manual only)
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'SEND_ONE_NEWS authorizes one fresh news alert outside regular timing'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: telegram-one-real-news-proof
+  cancel-in-progress: false
+jobs:
+  send-one-news:
+    if: ${{ github.event.inputs.confirmation == 'SEND_ONE_NEWS' && github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -r requirements.txt
+      - name: Send one eligible news alert and require Telegram receipt
+        env:
+          NEWS_PROOF_CONFIRM: ${{ github.event.inputs.confirmation }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python send_news_proof.py
