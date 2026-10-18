@@ -15,6 +15,7 @@ class SchedulingTests(unittest.TestCase):
     def test_format(self):
         item=dict(title="Official statement",source="ECB",url="https://www.ecb.europa.eu/",published=dt.datetime(2026,10,18,tzinfo=dt.timezone.utc))
         msg=format_digest("FR","hourly",[item],dt.datetime(2026,10,18,9,tzinfo=ZoneInfo("Europe/Paris")))
-        self.assertIn("官方原文",msg)
+        for section in ("【新闻标题】", "📰 发生了什么", "对法国市场的影响", "👀 后续关注", "🔗 官方原文"):
+            self.assertIn(section,msg)
         self.assertNotIn("CAC 40上涨",msg)
 if __name__=="__main__":unittest.main()
