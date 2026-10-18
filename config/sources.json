@@ -6,7 +6,10 @@
       "RO",
       "FR"
     ],
-    "weight": 4
+    "weight": 4,
+    "market": "US",
+    "asset_class": "macro",
+    "coverage": "us_market"
   },
   {
     "name": "ECB",
@@ -24,7 +27,10 @@
       "RO",
       "FR"
     ],
-    "weight": 3
+    "weight": 3,
+    "market": "US",
+    "asset_class": "macro",
+    "coverage": "us_market"
   },
   {
     "name": "US BLS Employment Situation",
@@ -33,7 +39,10 @@
       "RO",
       "FR"
     ],
-    "weight": 3
+    "weight": 3,
+    "market": "US",
+    "asset_class": "macro",
+    "coverage": "us_market"
   },
   {
     "name": "BVB official market announcements",
@@ -46,7 +55,9 @@
   {
     "name": "French Treasury official publications",
     "url": "https://www.tresor.economie.gouv.fr/Flux/Atom/Articles/Home",
-    "regions": ["FR"],
+    "regions": [
+      "FR"
+    ],
     "weight": 5
   },
   {
@@ -56,5 +67,44 @@
       "FR"
     ],
     "weight": 2
+  },
+  {
+    "name": "Nasdaq Markets (published/syndicated reporting)",
+    "url": "https://www.nasdaq.com/feed/rssoutbound?category=Markets",
+    "regions": [
+      "RO",
+      "FR"
+    ],
+    "weight": 4,
+    "market": "GLOBAL",
+    "asset_class": "equities",
+    "coverage": "us_market",
+    "source_kind": "publisher"
+  },
+  {
+    "name": "WSJ Markets (publisher RSS excerpts)",
+    "url": "https://feeds.content.dowjones.io/public/rss/RSSMarketsMain",
+    "regions": [
+      "RO",
+      "FR"
+    ],
+    "weight": 4,
+    "market": "GLOBAL",
+    "asset_class": "equities",
+    "coverage": "us_market",
+    "source_kind": "publisher"
+  },
+  {
+    "name": "US SEC official releases",
+    "url": "https://www.sec.gov/news/pressreleases.rss",
+    "regions": [
+      "RO",
+      "FR"
+    ],
+    "weight": 3,
+    "market": "US",
+    "asset_class": "equities",
+    "coverage": "us_market",
+    "source_kind": "institutional"
   }
 ]

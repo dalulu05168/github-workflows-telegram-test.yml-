@@ -3,6 +3,7 @@ import datetime as dt
 import json
 from news_bot import parse_news, select_articles, MARKETS, NOW, SOURCES, LOCAL_DOMAINS
 from zoneinfo import ZoneInfo
+from us_events import is_us_equity_event, us_event_context
 
 def source_audit(sources):
     """Configured coverage, not evidence that a feed is reachable."""
@@ -32,6 +33,9 @@ def report(articles, now, diagnostics=None):
             "available_morning_window": sum(0 <= (now - a["published"]).total_seconds() <= morning_hours * 3600 for a in candidates),
             "selected_hourly": len(hourly),
             "selected_morning": len(morning),
+            "selected_us_equity_hourly": sum(is_us_equity_event(a) for a, _ in hourly),
+            "selected_us_equity_morning": sum(is_us_equity_event(a) for a, _ in morning),
+            "selected_us_events_hourly": sum(bool(us_event_context(a, region)) for a, _ in hourly),
             "top_sources": [a["source"] for a, _ in hourly],
             "note": "Feed headlines only; not independently verified market-impact analysis.",
         }
@@ -61,6 +65,9 @@ def markdown_summary(data):
         lines.append(f"| {source} | {item['entries']} | {item['accepted']} | "
                      f"{item['outside_96h']} | {item['invalid_official_link_or_title']} | {error} |")
     lines.extend(["", "Successful workflow does not imply every feed is healthy or Telegram was sent."])
+    for region in ("RO", "FR"):
+        item = data["regions"][region]
+        lines.append(f"{region} US equity coverage: hourly={item['selected_us_equity_hourly']}, morning={item['selected_us_equity_morning']}; no stale or duplicate filler.")
     return "\n".join(lines) + "\n"
 
 

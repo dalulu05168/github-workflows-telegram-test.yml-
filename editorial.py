@@ -1,5 +1,6 @@
 """Conservative rule-based editorial hints; not investment advice or observed prices."""
 import re
+from us_events import us_event_context
 
 TOPICS = (
     ("monetary", ("interest rate", "monetary policy", "policy rate", "rate decision", "利率", "taux directeur"),
@@ -35,6 +36,9 @@ def editorial_context(article, region):
     title = article.get("title", "")
     summary = article.get("summary", "")
     content = (title + " " + summary).casefold()
+    us_context = us_event_context(article, region)
+    if us_context:
+        return dict(us_context, major=is_major(article))
     for topic, keywords, impact, watch in TOPICS:
         if any(re.search(r"(?<!\w)" + re.escape(word) + r"(?!\w)", content) for word in keywords):
             return {"topic": topic, "major": is_major(article), "impact": impact[region], "watch": watch}
