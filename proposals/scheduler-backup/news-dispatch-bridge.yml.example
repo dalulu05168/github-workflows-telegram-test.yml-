@@ -1,0 +1,25 @@
+name: News scheduler dispatch bridge
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ops/news-dispatch.json'
+permissions:
+  contents: read
+  actions: write
+concurrency:
+  group: news-dispatch-bridge
+  cancel-in-progress: false
+jobs:
+  dispatch:
+    if: github.ref == 'refs/heads/main' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Dispatch the existing live workflow from a fresh request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python dispatch_news_request.py
