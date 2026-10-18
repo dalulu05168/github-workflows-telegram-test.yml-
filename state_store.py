@@ -5,7 +5,7 @@ def prune_sent_state(state, now, keep_days=14):
     cutoff = now.date() - dt.timedelta(days=keep_days)
     cleaned = {}
     for key, hashes in state.items():
-        if not isinstance(hashes, list) or not key.startswith(("RO:", "FR:")):
+        if not isinstance(key, str) or not isinstance(hashes, list) or not key.startswith(("RO:", "FR:")):
             continue
         try:
             day = dt.date.fromisoformat(key.split(":", 1)[1][:10])
