@@ -16,6 +16,8 @@ jobs:
     if: ${{ github.event.inputs.confirmation == 'SEND_ONE_NEWS' && github.run_attempt == 1 }}
     runs-on: ubuntu-latest
     timeout-minutes: 6
+    env:
+      RSS_CACHE_DIR: .rss-cache
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
