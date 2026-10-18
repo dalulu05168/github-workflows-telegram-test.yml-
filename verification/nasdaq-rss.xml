@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/"
+  xmlns:foaf="http://xmlns.com/foaf/0.1/" xmlns:og="http://ogp.me/ns#"
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:schema="http://schema.org/"
+  xmlns:sioc="http://rdfs.org/sioc/ns#" xmlns:sioct="http://rdfs.org/sioc/types#"
+  xmlns:skos="http://www.w3.org/2004/02/skos/core#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+  xmlns:nasdaq="http://nasdaq.com/reference/feeds/1.0" version="2.0" xml:base="https://www.nasdaq.com/feed/rssoutbound">
+ <channel>
+  <title>Markets Feed</title>
+  <link>https://www.nasdaq.com/feed/rssoutbound</link>
+  <description>This feed is responsible for generating the rss feed related to the topic Markets</description>
+  <language>en</language>
+  <item>
+   <title>We Just Witnessed a Unique Stock Market Measure Do Something for Only the 4th Time Since 1997, and It Offers a Chilling Outlook for Wall Street</title>
+   <link>https://www.nasdaq.com/articles/we-just-witnessed-unique-stock-market-measure-do-something-only-4th-time-1997-and-it</link>
+   <description>
+        Key PointsThe artificial intelligence infrastructure build-out, among other factors, has lifted the Dow Jones Industrial Average, S&amp;amp;P 500, and Nasdaq Composite to new heights.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 10:56:02 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/we-just-witnessed-unique-stock-market-measure-do-something-only-4th-time-1997-and-it?time=1792320962</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers></nasdaq:tickers>
+  </item>
+  <item>
+   <title>Trump's &amp;quot;No Tax on Social Security&amp;quot; May Not Be What You Think It Is</title>
+   <link>https://www.nasdaq.com/articles/trumps-no-tax-social-security-may-not-be-what-you-think-it</link>
+   <description>
+        Key PointsA deduction only reduces taxable income.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 10:44:00 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/trumps-no-tax-social-security-may-not-be-what-you-think-it?time=1792320240</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers></nasdaq:tickers>
+  </item>
+  <item>
+   <title>2 Retail Stocks to Buy Before the Holiday Shopping Season</title>
+   <link>https://www.nasdaq.com/articles/2-retail-stocks-buy-holiday-shopping-season</link>
+   <description>
+        Key PointsAmazon's sales in last year's holiday quarter came in about 18% higher than in the third quarter.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 10:39:01 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/2-retail-stocks-buy-holiday-shopping-season?time=1792319941</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers>AMZN,AMZN,COST</nasdaq:tickers>
+  </item>
+  <item>
+   <title>SpaceX Bids for Space Dominance, Plans 456 Starship Launches Per Year</title>
+   <link>https://www.nasdaq.com/articles/spacex-bids-space-dominance-plans-456-starship-launches-year</link>
+   <description>
+        Key PointsSpaceX currently has permission to launch 25 Starships per year.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 10:26:00 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/spacex-bids-space-dominance-plans-456-starship-launches-year?time=1792319160</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers>RKLB,RKLB</nasdaq:tickers>
+  </item>
+  <item>
+   <title>As Bitcoin Matures, Altcoins Face a Reckoning. Here's Which Ones Have a Real Use.</title>
+   <link>https://www.nasdaq.com/articles/bitcoin-matures-altcoins-face-reckoning-heres-which-ones-have-real-use</link>
+   <description>
+        Key PointsFees are a great metric for analyzing the value of cryptocurrencies.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 10:20:00 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/bitcoin-matures-altcoins-face-reckoning-heres-which-ones-have-real-use?time=1792318800</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers>BTC,DOGE,ADA,XRP</nasdaq:tickers>
+  </item>
+  <item>
+   <title>Micron Technology (MU) Stock Is Down 24% From Its Peak. History Says $10,000 Invested Right Now Could Be Worth This Much by 2030</title>
+   <link>https://www.nasdaq.com/articles/micron-technology-mu-stock-down-24-its-peak-history-says-10000-invested-right-now-could-be</link>
+   <description>
+        Key PointsMicron Technology's stock is down around 24% from its all-time high.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 10:10:00 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/micron-technology-mu-stock-down-24-its-peak-history-says-10000-invested-right-now-could-be?time=1792318200</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers>MU,MU</nasdaq:tickers>
+  </item>
+  <item>
+   <title>Netflix Stock Has Gained in the Fourth Quarter in 17 of the Last 24 Years</title>
+   <link>https://www.nasdaq.com/articles/netflix-stock-has-gained-fourth-quarter-17-last-24-years</link>
+   <description>
+        Key PointsNetflix shares lost 22% in the fourth quarter of 2025, its worst fourth quarter since 2018.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 10:08:02 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/netflix-stock-has-gained-fourth-quarter-17-last-24-years?time=1792318082</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers>NFLX,NFLX</nasdaq:tickers>
+  </item>
+  <item>
+   <title>My Top Dividend Growth Stock to Buy in October and Hold Forever</title>
+   <link>https://www.nasdaq.com/articles/my-top-dividend-growth-stock-buy-october-and-hold-forever-0</link>
+   <description>
+        Key PointsMorgan Stanley has been growing its dividend aggressively, most recently with a 15% increase.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 09:55:00 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/my-top-dividend-growth-stock-buy-october-and-hold-forever-0?time=1792317300</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers>MS,MS</nasdaq:tickers>
+  </item>
+  <item>
+   <title>Can Alphabet Stock Double By 2030?</title>
+   <link>https://www.nasdaq.com/articles/can-alphabet-stock-double-2030</link>
+   <description>
+        Key PointsGoogle Cloud and Gemini are immediate catalysts, with cloud revenue in particular continuing to accelerate.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 09:50:00 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/can-alphabet-stock-double-2030?time=1792317000</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers>GOOG,GOOG,GOOGL</nasdaq:tickers>
+  </item>
+  <item>
+   <title>Is Centrus Energy Stock a Millionaire Maker?</title>
+   <link>https://www.nasdaq.com/articles/centrus-energy-stock-millionaire-maker</link>
+   <description>
+        Key PointsCentrus controls a crucial link in the nuclear energy supply chain.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 09:40:00 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/centrus-energy-stock-millionaire-maker?time=1792316400</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers>LEU,LEU</nasdaq:tickers>
+  </item>
+  <item>
+   <title>A Record Number of S&amp;P 500 Companies Issued Upbeat Guidance Before Earnings Season. Should You Buy an Index Fund Now?</title>
+   <link>https://www.nasdaq.com/articles/record-number-sp-500-companies-issued-upbeat-guidance-earnings-season-should-you-buy-index</link>
+   <description>
+        Key PointsFactSet counts 72 S&amp;amp;P 500 companies issuing positive third-quarter earnings guidance, the most since it started tracking the number in 2006.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 09:37:02 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/record-number-sp-500-companies-issued-upbeat-guidance-earnings-season-should-you-buy-index?time=1792316222</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers>VOO,VOO</nasdaq:tickers>
+  </item>
+  <item>
+   <title>Prediction: $1,000 Invested in Taiwan Semiconductor Today Will Be Worth This Much by 2030</title>
+   <link>https://www.nasdaq.com/articles/prediction-1000-invested-taiwan-semiconductor-today-will-be-worth-much-2030</link>
+   <description>
+        Key PointsTSMC is a leader in chip manufacturing, and the AI boom has driven tremendous growth.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 09:30:00 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/prediction-1000-invested-taiwan-semiconductor-today-will-be-worth-much-2030?time=1792315800</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers>TSM,TSM,NVDA,AMD</nasdaq:tickers>
+  </item>
+  <item>
+   <title>Look Who's Using D2C Satellite Phones Now!</title>
+   <link>https://www.nasdaq.com/articles/look-whos-using-d2c-satellite-phones-now</link>
+   <description>
+        Key PointsSpaceX has 650 DTC satellites in orbit, and is seeking permission to launch 15,000 more.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 09:25:00 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/look-whos-using-d2c-satellite-phones-now?time=1792315500</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers>ASTS</nasdaq:tickers>
+  </item>
+  <item>
+   <title>I Just Bought More Realty Income (O) Stock. Here’s How Many Shares It Takes to Collect $1,000 a Month.</title>
+   <link>https://www.nasdaq.com/articles/i-just-bought-more-realty-income-o-stock-heres-how-many-shares-it-takes-collect-1000-month</link>
+   <description>
+        Key PointsRealty Income has paid a monthly dividend for over half a century.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 09:20:02 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/i-just-bought-more-realty-income-o-stock-heres-how-many-shares-it-takes-collect-1000-month?time=1792315202</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers>O,O</nasdaq:tickers>
+  </item>
+  <item>
+   <title>Could Investing $200 Per Month in VOO Make You a Millionaire? Here's What History Says.</title>
+   <link>https://www.nasdaq.com/articles/could-investing-200-month-voo-make-you-millionaire-heres-what-history-says</link>
+   <description>
+        Key PointsA $200 monthly investment into the Vanguard S&amp;amp;P 500 ETF (VOO) might not seem like enough to build serious long-term wealth.
+    </description>
+   <pubDate>Sun, 18 Oct 2026 09:10:00 +0000</pubDate>
+   <guid isPermaLink="true">https://www.nasdaq.com/articles/could-investing-200-month-voo-make-you-millionaire-heres-what-history-says?time=1792314600</guid>
+   <dc:creator>The Motley Fool</dc:creator>
+   <category>Markets</category>
+   <nasdaq:tickers>VOO,VOO</nasdaq:tickers>
+  </item>
+ </channel>
+</rss>

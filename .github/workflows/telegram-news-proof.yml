@@ -27,4 +27,6 @@ jobs:
           NEWS_PROOF_CONFIRM: ${{ github.event.inputs.confirmation }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python send_news_proof.py
+        run: |
+          python seed_proof_source.py
+          python send_news_proof.py
