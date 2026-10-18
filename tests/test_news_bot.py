@@ -18,4 +18,7 @@ class SchedulingTests(unittest.TestCase):
         for section in ("【新闻标题】", "📰 发生了什么", "对法国市场的影响", "👀 后续关注", "🔗 官方原文"):
             self.assertIn(section,msg)
         self.assertNotIn("CAC 40上涨",msg)
+        item["summary"] = "Original English summary"
+        msg = format_digest("FR", "hourly", [item], dt.datetime(2026,10,18,9,tzinfo=ZoneInfo("Europe/Paris")))
+        self.assertIn("官方原文摘要（未翻译）", msg)
 if __name__=="__main__":unittest.main()
