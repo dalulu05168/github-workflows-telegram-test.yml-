@@ -21,9 +21,9 @@ def indicative_session_windows(utc_now):
             continue
         opening = local.replace(hour=config["open"][0], minute=config["open"][1], second=0, microsecond=0)
         minutes = (local - opening).total_seconds() / 60
-        if -30 <= minutes < -20:
+        if -30 <= minutes < 0:
             phase = "pre_open"
-        elif 20 <= minutes < 30:
+        elif 0 <= minutes < 30:
             phase = "post_open"
         else:
             continue
