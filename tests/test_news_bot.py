@@ -1,7 +1,7 @@
 import datetime as dt
 import unittest
 from zoneinfo import ZoneInfo
-from news_bot import due_slot, rank, format_digest, select_articles, preview_slot, article_digest, local_source
+from news_bot import due_slot, rank, format_digest, select_articles, select_articles, preview_slot, article_digest, local_source
 class SchedulingTests(unittest.TestCase):
     def test_morning(self):
         for zone in ("Europe/Bucharest","Europe/Paris"):
@@ -59,6 +59,21 @@ class SchedulingTests(unittest.TestCase):
         self.assertTrue(local_source(local, "RO"))
         self.assertFalse(local_source(global_item, "RO"))
         self.assertGreater(rank(local, "RO"), rank(global_item, "RO"))
+
+    def test_monday_morning_includes_weekend_release(self):
+        now = dt.datetime(2026, 10, 19, 4, 30, tzinfo=dt.timezone.utc)
+        item = dict(title="BVB Friday release", summary="", weight=5,
+                    source="BVB", url="https://www.bvb.ro/news/friday",
+                    regions=["RO"], published=now - dt.timedelta(hours=60))
+        self.assertEqual(len(select_articles([item], "RO", set(), "morning", now)), 1)
+        self.assertEqual(len(select_articles([item], "RO", set(), "hourly", now)), 0)
+
+    def test_tuesday_morning_does_not_replay_friday_release(self):
+        now = dt.datetime(2026, 10, 20, 4, 30, tzinfo=dt.timezone.utc)
+        item = dict(title="Old release", summary="", weight=5,
+                    source="BVB", url="https://www.bvb.ro/news/old",
+                    regions=["RO"], published=now - dt.timedelta(hours=60))
+        self.assertEqual(select_articles([item], "RO", set(), "morning", now), [])
 
     def test_rank(self):
         item=dict(title="Romania BNR interest rate decision",summary="",weight=2,published=dt.datetime(2026,10,18,tzinfo=dt.timezone.utc))
